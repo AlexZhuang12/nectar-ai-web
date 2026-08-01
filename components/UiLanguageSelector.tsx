@@ -1,12 +1,7 @@
 "use client";
 
-import {
-  CANONICAL_LOCALES,
-  isCanonicalLocale,
-  normalizeLocale,
-} from "@/lib/i18n";
 import type { Locale } from "@/lib/types";
-import { useLocale, useTranslation } from "@/context/LocaleContext";
+import { useLocale } from "@/context/LocaleContext";
 import { Globe } from "lucide-react";
 
 /** Canonical UI locale options — values MUST match VALID_LOCALES exactly */
@@ -21,24 +16,16 @@ const UI_LANGUAGE_OPTIONS: {
   { value: "es-ES", label: "Español", flag: "🇪🇸" },
 ];
 
-/** UI language selector — ONLY calls setLocale. Used in Header. */
+/** UI language selector — ONLY calls setUiLocale. Used in Header. */
 export default function UiLanguageSelector() {
-  const { setLocale } = useLocale();
-  const { uiLocale, localeRevision, t } = useTranslation();
+  const { setUiLocale, uiLocale, t } = useLocale();
 
   function handleChange(raw: string) {
-    // Prefer direct canonical pass-through (exact option values)
-    const newLang: Locale | null = isCanonicalLocale(raw)
-      ? raw
-      : normalizeLocale(raw);
-
-    if (!newLang || !CANONICAL_LOCALES.includes(newLang)) {
-      console.warn("[UiLanguageSelector] Invalid selection:", raw);
-      return;
-    }
-
-    console.log("UI Language Changed To:", newLang);
-    setLocale(newLang);
+    console.log("UI Language Changed To:", raw);
+    setUiLocale(raw as Locale);
+    // 強制將新的語系寫入 localStorage 並刷新頁面，完全杜絕 React/Next.js 的 Context 快取死鎖
+    localStorage.setItem("nectar-ui-locale", raw);
+    window.location.reload();
   }
 
   return (
@@ -46,7 +33,6 @@ export default function UiLanguageSelector() {
       className="relative inline-flex flex-col gap-1"
       data-selector="ui-language"
       data-value={uiLocale}
-      data-locale-revision={localeRevision}
     >
       <label
         htmlFor="ui-language-select"

@@ -46,8 +46,8 @@ export interface LocaleContextValue {
   /** Current UI locale — reactive */
   locale: Locale;
   uiLocale: Locale;
-  setLocale: (locale: Locale) => void;
-  setUiLocale: (locale: Locale) => void;
+  setLocale: (locale: Locale | string) => void;
+  setUiLocale: (locale: Locale | string) => void;
   aiResponseLanguage: Locale;
   setAiResponseLanguage: (locale: Locale) => void;
   /** Re-created whenever locale changes — triggers consumer re-renders */
@@ -89,17 +89,20 @@ export function LocaleProvider({ children }: { children: ReactNode }) {
     [dictionary, uiLocale]
   );
 
-  const setUiLocale = useCallback((locale: Locale) => {
+  const setUiLocale = useCallback((locale: Locale | string) => {
     const normalized = normalizeLocale(locale);
     if (!normalized) {
       console.warn("[LocaleContext] Invalid UI locale rejected:", locale);
       return;
     }
-    console.log("[LocaleContext] setLocale →", normalized);
+    console.log("[LocaleContext] setUiLocale →", normalized);
     writeStoredLocale(UI_LOCALE_KEY, normalized);
     syncDocumentLang(normalized);
     setUiLocaleState(normalized);
     setLocaleRevision((n) => n + 1);
+    if (typeof window !== "undefined") {
+      window.location.reload();
+    }
   }, []);
 
   const setAiResponseLanguage = useCallback((locale: Locale) => {
@@ -112,26 +115,17 @@ export function LocaleProvider({ children }: { children: ReactNode }) {
     writeStoredLocale(AI_LOCALE_KEY, normalized);
   }, []);
 
-  const value = useMemo<LocaleContextValue>(
-    () => ({
-      locale: uiLocale,
-      uiLocale,
-      setLocale: setUiLocale,
-      setUiLocale,
-      aiResponseLanguage,
-      setAiResponseLanguage,
-      t,
-      localeRevision,
-    }),
-    [
-      uiLocale,
-      setUiLocale,
-      aiResponseLanguage,
-      setAiResponseLanguage,
-      t,
-      localeRevision,
-    ]
-  );
+  // Fresh object every render — never memoized, so consumers always see latest locale
+  const value: LocaleContextValue = {
+    locale: uiLocale,
+    uiLocale,
+    setLocale: setUiLocale,
+    setUiLocale,
+    aiResponseLanguage,
+    setAiResponseLanguage,
+    t,
+    localeRevision,
+  };
 
   return (
     <LocaleContext.Provider value={value}>
