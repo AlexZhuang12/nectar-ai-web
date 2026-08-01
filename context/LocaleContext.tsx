@@ -22,46 +22,32 @@ const AI_LOCALE_KEY = "nectar-ai-locale";
 const DEFAULT_UI_LOCALE: Locale = "zh-TW";
 const DEFAULT_AI_LOCALE: Locale = "en-US";
 
-/** Read-only: never writes to localStorage */
-function readUiLocaleFromStorage(): Locale {
-  if (typeof window === "undefined") return DEFAULT_UI_LOCALE;
-  try {
-    const raw = localStorage.getItem(UI_LOCALE_KEY);
-    if (raw === null || raw.trim() === "") return DEFAULT_UI_LOCALE;
+const CANONICAL_UI_LOCALES: Locale[] = ["zh-TW", "en-US", "ja-JP", "es-ES"];
 
-    const normalized = normalizeLocale(raw);
-    if (normalized) return normalized;
-
-    const trimmed = raw.trim();
-    if (isCanonicalLocale(trimmed)) return trimmed;
-
-    console.warn(
-      "[LocaleContext] Unrecognized stored UI locale (storage untouched):",
-      raw
-    );
-    return DEFAULT_UI_LOCALE;
-  } catch {
-    return DEFAULT_UI_LOCALE;
+function readUiLocaleLazy(): Locale {
+  if (typeof window !== "undefined") {
+    const saved = localStorage.getItem(UI_LOCALE_KEY);
+    if (
+      saved &&
+      (saved === "en-US" ||
+        saved === "ja-JP" ||
+        saved === "es-ES" ||
+        saved === "zh-TW")
+    ) {
+      return saved as Locale;
+    }
   }
+  return DEFAULT_UI_LOCALE;
 }
 
-/** Read-only: never writes to localStorage */
-function readAiLocaleFromStorage(): Locale {
-  if (typeof window === "undefined") return DEFAULT_AI_LOCALE;
-  try {
-    const raw = localStorage.getItem(AI_LOCALE_KEY);
-    if (raw === null || raw.trim() === "") return DEFAULT_AI_LOCALE;
-
-    const normalized = normalizeLocale(raw);
-    if (normalized) return normalized;
-
-    const trimmed = raw.trim();
-    if (isCanonicalLocale(trimmed)) return trimmed;
-
-    return DEFAULT_AI_LOCALE;
-  } catch {
-    return DEFAULT_AI_LOCALE;
+function readAiLocaleLazy(): Locale {
+  if (typeof window !== "undefined") {
+    const saved = localStorage.getItem(AI_LOCALE_KEY);
+    if (saved && isCanonicalLocale(saved.trim())) {
+      return saved.trim() as Locale;
+    }
   }
+  return DEFAULT_AI_LOCALE;
 }
 
 function syncDocumentLang(locale: Locale) {
@@ -84,27 +70,16 @@ export interface LocaleContextValue {
 export const LocaleContext = createContext<LocaleContextValue | null>(null);
 
 export function LocaleProvider({ children }: { children: ReactNode }) {
-  const [uiLocale, setUiLocaleState] = useState<Locale>(DEFAULT_UI_LOCALE);
+  const [uiLocale, setUiLocaleState] = useState<Locale>(readUiLocaleLazy);
   const [aiResponseLanguage, setAiResponseLanguageState] =
-    useState<Locale>(DEFAULT_AI_LOCALE);
+    useState<Locale>(readAiLocaleLazy);
   const [localeRevision, setLocaleRevision] = useState(0);
-  const [ready, setReady] = useState(false);
 
-  // Read-only hydration — never writes nectar-ui-locale on mount
+  // Mount: sync <html lang> only — never write localStorage, never reset uiLocale
   useEffect(() => {
-    const savedUi = readUiLocaleFromStorage();
-    const savedAi = readAiLocaleFromStorage();
-    setUiLocaleState(savedUi);
-    setAiResponseLanguageState(savedAi);
-    syncDocumentLang(savedUi);
-    console.log(
-      "[LocaleContext] Hydrated from storage (read-only) — UI:",
-      savedUi,
-      "AI:",
-      savedAi
-    );
-    setReady(true);
-  }, []);
+    syncDocumentLang(uiLocale);
+    console.log("[LocaleContext] Initialized — UI:", uiLocale, "AI:", aiResponseLanguage);
+  }, [uiLocale, aiResponseLanguage]);
 
   const dictionary = useMemo(() => getDictionary(uiLocale), [uiLocale]);
 
@@ -124,7 +99,7 @@ export function LocaleProvider({ children }: { children: ReactNode }) {
   const setUiLocale = useCallback((locale: Locale | string) => {
     const normalized =
       normalizeLocale(locale) ??
-      (isCanonicalLocale(String(locale).trim())
+      (CANONICAL_UI_LOCALES.includes(String(locale).trim() as Locale)
         ? (String(locale).trim() as Locale)
         : null);
 
@@ -134,11 +109,7 @@ export function LocaleProvider({ children }: { children: ReactNode }) {
     }
 
     console.log("[LocaleContext] setUiLocale →", normalized);
-    try {
-      localStorage.setItem(UI_LOCALE_KEY, normalized);
-    } catch (err) {
-      console.warn("[LocaleContext] Failed to write localStorage:", err);
-    }
+    localStorage.setItem(UI_LOCALE_KEY, normalized);
     syncDocumentLang(normalized);
     setUiLocaleState(normalized);
     setLocaleRevision((n) => n + 1);
@@ -156,11 +127,7 @@ export function LocaleProvider({ children }: { children: ReactNode }) {
       return;
     }
     setAiResponseLanguageState(normalized);
-    try {
-      localStorage.setItem(AI_LOCALE_KEY, normalized);
-    } catch (err) {
-      console.warn("[LocaleContext] Failed to write AI locale:", err);
-    }
+    localStorage.setItem(AI_LOCALE_KEY, normalized);
   }, []);
 
   const value: LocaleContextValue = {
@@ -179,7 +146,6 @@ export function LocaleProvider({ children }: { children: ReactNode }) {
       <div
         key={`locale-${uiLocale}-${localeRevision}`}
         data-current-locale={uiLocale}
-        data-locale-ready={ready ? "true" : "false"}
         data-locale-revision={localeRevision}
       >
         {children}
