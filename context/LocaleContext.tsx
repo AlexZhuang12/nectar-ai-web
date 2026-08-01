@@ -1,9 +1,9 @@
 "use client";
 
 import {
-  getDictionary,
   isCanonicalLocale,
   normalizeLocale,
+  t as tI18n,
 } from "@/lib/i18n";
 import type { TranslationKeys } from "@/lib/i18n";
 import type { Locale } from "@/lib/types";
@@ -12,7 +12,6 @@ import {
   useCallback,
   useContext,
   useEffect,
-  useMemo,
   useState,
   type ReactNode,
 } from "react";
@@ -104,18 +103,9 @@ export function LocaleProvider({ children }: { children: ReactNode }) {
     console.log("[LocaleContext] AI locale:", aiResponseLanguage);
   }, []); // eslint-disable-line react-hooks/exhaustive-deps -- mount init only
 
-  const dictionary = useMemo(() => getDictionary(uiLocale), [uiLocale]);
-
   const t = useCallback(
-    (key: TranslationKeys) => {
-      const value = dictionary[key];
-      if (value === undefined) {
-        console.warn(`Missing key: ${key} for locale: ${uiLocale}`);
-        return getDictionary("en-US")[key] ?? getDictionary("zh-TW")[key] ?? key;
-      }
-      return value;
-    },
-    [dictionary, uiLocale]
+    (key: TranslationKeys) => tI18n(uiLocale, key),
+    [uiLocale]
   );
 
   const setUiLocale = useCallback((locale: Locale | string) => {
