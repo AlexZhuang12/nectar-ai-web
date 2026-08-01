@@ -1,3 +1,5 @@
+export const dynamic = "force-dynamic";
+
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import Providers from "@/components/Providers";
@@ -19,8 +21,6 @@ export const metadata: Metadata = {
     "Key Information & Dual-Language Alignment Extractor powered by AI",
 };
 
-/** Avoid static HTML snapshot that can mask client-side locale switching */
-export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
 export default function RootLayout({
