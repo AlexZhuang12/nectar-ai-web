@@ -24,28 +24,38 @@ const DEFAULT_AI_LOCALE: Locale = "en-US";
 
 const CANONICAL_UI_LOCALES: Locale[] = ["zh-TW", "en-US", "ja-JP", "es-ES"];
 
-function readUiLocaleLazy(): Locale {
-  if (typeof window !== "undefined") {
-    const saved = localStorage.getItem(UI_LOCALE_KEY);
-    if (
-      saved &&
-      (saved === "en-US" ||
-        saved === "ja-JP" ||
-        saved === "es-ES" ||
-        saved === "zh-TW")
-    ) {
-      return saved as Locale;
-    }
+function isCanonicalUiLocale(value: string): value is Locale {
+  return CANONICAL_UI_LOCALES.includes(value as Locale);
+}
+
+function readLangFromQuery(): Locale | null {
+  if (typeof window === "undefined") return null;
+  const fromQuery = new URLSearchParams(window.location.search).get("lang");
+  if (fromQuery && isCanonicalUiLocale(fromQuery)) {
+    return fromQuery;
   }
+  return normalizeLocale(fromQuery);
+}
+
+function readUiLocaleLazy(): Locale {
+  if (typeof window === "undefined") return DEFAULT_UI_LOCALE;
+
+  const fromQuery = readLangFromQuery();
+  if (fromQuery) return fromQuery;
+
+  const saved = localStorage.getItem(UI_LOCALE_KEY);
+  if (saved && isCanonicalUiLocale(saved)) {
+    return saved;
+  }
+
   return DEFAULT_UI_LOCALE;
 }
 
 function readAiLocaleLazy(): Locale {
-  if (typeof window !== "undefined") {
-    const saved = localStorage.getItem(AI_LOCALE_KEY);
-    if (saved && isCanonicalLocale(saved.trim())) {
-      return saved.trim() as Locale;
-    }
+  if (typeof window === "undefined") return DEFAULT_AI_LOCALE;
+  const saved = localStorage.getItem(AI_LOCALE_KEY);
+  if (saved && isCanonicalLocale(saved.trim())) {
+    return saved.trim() as Locale;
   }
   return DEFAULT_AI_LOCALE;
 }
@@ -75,11 +85,24 @@ export function LocaleProvider({ children }: { children: ReactNode }) {
     useState<Locale>(readAiLocaleLazy);
   const [localeRevision, setLocaleRevision] = useState(0);
 
-  // Mount: sync <html lang> only — never write localStorage, never reset uiLocale
+  // Mount: URL ?lang= takes priority, persist to localStorage, sync document
   useEffect(() => {
-    syncDocumentLang(uiLocale);
-    console.log("[LocaleContext] Initialized — UI:", uiLocale, "AI:", aiResponseLanguage);
-  }, [uiLocale, aiResponseLanguage]);
+    const fromQuery = readLangFromQuery();
+    let loaded: Locale = uiLocale;
+
+    if (fromQuery) {
+      localStorage.setItem(UI_LOCALE_KEY, fromQuery);
+      loaded = fromQuery;
+      if (fromQuery !== uiLocale) {
+        setUiLocaleState(fromQuery);
+        setLocaleRevision((n) => n + 1);
+      }
+    }
+
+    syncDocumentLang(loaded);
+    console.log("Current UI Locale loaded:", loaded);
+    console.log("[LocaleContext] AI locale:", aiResponseLanguage);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps -- mount init only
 
   const dictionary = useMemo(() => getDictionary(uiLocale), [uiLocale]);
 
@@ -95,11 +118,10 @@ export function LocaleProvider({ children }: { children: ReactNode }) {
     [dictionary, uiLocale]
   );
 
-  /** User-initiated only — sole writer for nectar-ui-locale */
   const setUiLocale = useCallback((locale: Locale | string) => {
     const normalized =
       normalizeLocale(locale) ??
-      (CANONICAL_UI_LOCALES.includes(String(locale).trim() as Locale)
+      (isCanonicalUiLocale(String(locale).trim())
         ? (String(locale).trim() as Locale)
         : null);
 
@@ -108,24 +130,13 @@ export function LocaleProvider({ children }: { children: ReactNode }) {
       return;
     }
 
-    console.log("[LocaleContext] setUiLocale →", normalized);
     localStorage.setItem(UI_LOCALE_KEY, normalized);
-    syncDocumentLang(normalized);
-    setUiLocaleState(normalized);
-    setLocaleRevision((n) => n + 1);
-
-    if (typeof window !== "undefined") {
-      window.location.reload();
-    }
+    window.location.href = `${window.location.pathname}?lang=${normalized}`;
   }, []);
 
-  /** User-initiated only — sole writer for nectar-ai-locale */
   const setAiResponseLanguage = useCallback((locale: Locale) => {
     const normalized = normalizeLocale(locale);
-    if (!normalized) {
-      console.warn("[LocaleContext] Invalid AI locale rejected:", locale);
-      return;
-    }
+    if (!normalized) return;
     setAiResponseLanguageState(normalized);
     localStorage.setItem(AI_LOCALE_KEY, normalized);
   }, []);
