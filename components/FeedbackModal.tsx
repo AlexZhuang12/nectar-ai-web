@@ -27,7 +27,7 @@ const CATEGORIES: {
 ];
 
 export default function FeedbackModal({ isOpen, onClose }: FeedbackModalProps) {
-  const { uiLocale, localeRevision, t } = useTranslation();
+  const { t, locale, uiLocale, localeRevision } = useTranslation();
   const [category, setCategory] = useState<FeedbackCategory>("feature");
   const [message, setMessage] = useState("");
   const [submitting, setSubmitting] = useState(false);
@@ -71,8 +71,10 @@ export default function FeedbackModal({ isOpen, onClose }: FeedbackModalProps) {
 
   return (
     <div
+      key={`feedback-modal-${locale}-${localeRevision}`}
       className="fixed inset-0 z-50 flex items-center justify-center p-4"
       data-ui-locale={uiLocale}
+      data-current-locale={locale}
       data-locale-revision={localeRevision}
     >
       <div

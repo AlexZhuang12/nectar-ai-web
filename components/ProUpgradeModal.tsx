@@ -12,7 +12,7 @@ interface ProUpgradeModalProps {
 }
 
 export default function ProUpgradeModal({ isOpen, onClose }: ProUpgradeModalProps) {
-  const { uiLocale, localeRevision, t } = useTranslation();
+  const { t, locale, uiLocale, localeRevision } = useTranslation();
   const [checkingOut, setCheckingOut] = useState(false);
   const [checkoutDone, setCheckoutDone] = useState(false);
 
@@ -32,8 +32,10 @@ export default function ProUpgradeModal({ isOpen, onClose }: ProUpgradeModalProp
 
   return (
     <div
+      key={`pro-modal-${locale}-${localeRevision}`}
       className="fixed inset-0 z-50 flex items-center justify-center p-4"
       data-ui-locale={uiLocale}
+      data-current-locale={locale}
       data-locale-revision={localeRevision}
     >
       <div

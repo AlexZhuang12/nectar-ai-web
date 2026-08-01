@@ -46,7 +46,7 @@ export default function ExtractorPanel({
   onUpgradeClick,
 }: ExtractorPanelProps) {
   const { aiResponseLanguage } = useLocale();
-  const { uiLocale, localeRevision, t } = useTranslation();
+  const { t, locale, uiLocale, localeRevision } = useTranslation();
   const [input, setInput] = useState("");
   const [mode, setMode] = useState<ExtractionMode>("both");
   const [loading, setLoading] = useState(false);
@@ -103,7 +103,9 @@ export default function ExtractorPanel({
 
   return (
     <section
+      key={`extractor-panel-${locale}-${localeRevision}`}
       data-ui-locale={uiLocale}
+      data-current-locale={locale}
       data-locale-revision={localeRevision}
       className="card"
     >
@@ -223,10 +225,10 @@ export default function ExtractorPanel({
 }
 
 function KeyInfoDisplay({ items }: { items: KeyInfoItem[] }) {
-  const { t } = useTranslation();
+  const { t, locale } = useTranslation();
 
   return (
-    <div>
+    <div key={`key-info-${locale}`}>
       <h3 className="mb-2 flex items-center gap-2 text-sm font-semibold text-gray-900 dark:text-white">
         <KeyRound className="h-4 w-4 text-nectar-500" />
         {t("keyInfo")}
@@ -251,10 +253,10 @@ function KeyInfoDisplay({ items }: { items: KeyInfoItem[] }) {
 }
 
 function AlignmentDisplay({ pairs }: { pairs: AlignmentPair[] }) {
-  const { t } = useTranslation();
+  const { t, locale } = useTranslation();
 
   return (
-    <div>
+    <div key={`alignment-${locale}`}>
       <h3 className="mb-2 flex items-center gap-2 text-sm font-semibold text-gray-900 dark:text-white">
         <ArrowRightLeft className="h-4 w-4 text-nectar-500" />
         {t("dualAlignment")}

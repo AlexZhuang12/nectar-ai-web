@@ -22,7 +22,7 @@ interface KnowledgeHistoryProps {
 export default function KnowledgeHistory({
   refreshKey = 0,
 }: KnowledgeHistoryProps) {
-  const { uiLocale, localeRevision, t } = useTranslation();
+  const { t, locale, uiLocale, localeRevision } = useTranslation();
   const [records, setRecords] = useState<KnowledgeRecord[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -44,7 +44,9 @@ export default function KnowledgeHistory({
 
   return (
     <section
+      key={`knowledge-history-${locale}-${localeRevision}`}
       data-ui-locale={uiLocale}
+      data-current-locale={locale}
       data-locale-revision={localeRevision}
       className="card"
     >
