@@ -21,6 +21,7 @@ export const metadata: Metadata = {
 
 /** Avoid static HTML snapshot that can mask client-side locale switching */
 export const dynamic = "force-dynamic";
+export const revalidate = 0;
 
 export default function RootLayout({
   children,
@@ -30,6 +31,7 @@ export default function RootLayout({
   return (
     <html lang="zh-TW" suppressHydrationWarning>
       <body
+        suppressHydrationWarning
         className={`${geistSans.variable} ${geistMono.variable} min-h-screen antialiased`}
       >
         <Providers>{children}</Providers>
