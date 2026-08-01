@@ -1,9 +1,8 @@
 "use client";
 
-import { t as translate, normalizeLocale } from "@/lib/i18n";
+import { getDictionary, normalizeLocale } from "@/lib/i18n";
 import type { TranslationKeys } from "@/lib/i18n";
 import type { Locale } from "@/lib/types";
-import { useRouter } from "next/navigation";
 import {
   createContext,
   useCallback,
@@ -37,11 +36,21 @@ function writeStoredLocale(key: string, locale: Locale) {
   }
 }
 
+function syncDocumentLang(locale: Locale) {
+  if (typeof document !== "undefined") {
+    document.documentElement.lang = locale;
+  }
+}
+
 export interface LocaleContextValue {
+  /** Current UI locale — reactive */
+  locale: Locale;
   uiLocale: Locale;
+  setLocale: (locale: Locale) => void;
   setUiLocale: (locale: Locale) => void;
   aiResponseLanguage: Locale;
   setAiResponseLanguage: (locale: Locale) => void;
+  /** Re-created whenever locale changes — triggers consumer re-renders */
   t: (key: TranslationKeys) => string;
   localeRevision: number;
 }
@@ -49,53 +58,49 @@ export interface LocaleContextValue {
 export const LocaleContext = createContext<LocaleContextValue | null>(null);
 
 export function LocaleProvider({ children }: { children: ReactNode }) {
-  const router = useRouter();
   const [uiLocale, setUiLocaleState] = useState<Locale>(DEFAULT_UI_LOCALE);
   const [aiResponseLanguage, setAiResponseLanguageState] =
     useState<Locale>(DEFAULT_AI_LOCALE);
   const [localeRevision, setLocaleRevision] = useState(0);
-  const [ready, setReady] = useState(false);
 
-  // Hydrate from localStorage once on mount
+  // Restore persisted locale after mount (avoids SSR/client mismatch)
   useEffect(() => {
     const savedUi = readStoredLocale(UI_LOCALE_KEY, DEFAULT_UI_LOCALE);
     const savedAi = readStoredLocale(AI_LOCALE_KEY, DEFAULT_AI_LOCALE);
     setUiLocaleState(savedUi);
     setAiResponseLanguageState(savedAi);
-    document.documentElement.lang = savedUi;
+    syncDocumentLang(savedUi);
     console.log("[LocaleContext] Initialized — UI:", savedUi, "AI:", savedAi);
-    setReady(true);
   }, []);
 
-  useEffect(() => {
-    if (!ready) return;
-    document.documentElement.lang = uiLocale;
-    writeStoredLocale(UI_LOCALE_KEY, uiLocale);
-    console.log("[LocaleContext] currentLocale (UI):", uiLocale);
-  }, [uiLocale, ready]);
+  // Reactive dictionary — new reference whenever uiLocale changes
+  const dictionary = useMemo(() => getDictionary(uiLocale), [uiLocale]);
 
-  useEffect(() => {
-    if (!ready) return;
-    writeStoredLocale(AI_LOCALE_KEY, aiResponseLanguage);
-    console.log("[LocaleContext] currentLocale (AI):", aiResponseLanguage);
-  }, [aiResponseLanguage, ready]);
-
-  const setUiLocale = useCallback(
-    (locale: Locale) => {
-      const normalized = normalizeLocale(locale);
-      if (!normalized) {
-        console.warn("[LocaleContext] Invalid UI locale rejected:", locale);
-        return;
+  // t is re-created when dictionary/uiLocale changes → all consumers re-render
+  const t = useCallback(
+    (key: TranslationKeys) => {
+      const value = dictionary[key];
+      if (value === undefined) {
+        console.warn(`Missing key: ${key} for locale: ${uiLocale}`);
+        return getDictionary("en-US")[key] ?? getDictionary("zh-TW")[key] ?? key;
       }
-      console.log("[LocaleContext] setUiLocale →", normalized);
-      setUiLocaleState(normalized);
-      setLocaleRevision((n) => n + 1);
-      document.documentElement.lang = normalized;
-      writeStoredLocale(UI_LOCALE_KEY, normalized);
-      router.refresh();
+      return value;
     },
-    [router]
+    [dictionary, uiLocale]
   );
+
+  const setUiLocale = useCallback((locale: Locale) => {
+    const normalized = normalizeLocale(locale);
+    if (!normalized) {
+      console.warn("[LocaleContext] Invalid UI locale rejected:", locale);
+      return;
+    }
+    console.log("[LocaleContext] setLocale →", normalized);
+    writeStoredLocale(UI_LOCALE_KEY, normalized);
+    syncDocumentLang(normalized);
+    setUiLocaleState(normalized);
+    setLocaleRevision((n) => n + 1);
+  }, []);
 
   const setAiResponseLanguage = useCallback((locale: Locale) => {
     const normalized = normalizeLocale(locale);
@@ -103,17 +108,19 @@ export function LocaleProvider({ children }: { children: ReactNode }) {
       console.warn("[LocaleContext] Invalid AI locale rejected:", locale);
       return;
     }
-    console.log("[LocaleContext] setAiResponseLanguage →", normalized);
     setAiResponseLanguageState(normalized);
+    writeStoredLocale(AI_LOCALE_KEY, normalized);
   }, []);
 
   const value = useMemo<LocaleContextValue>(
     () => ({
+      locale: uiLocale,
       uiLocale,
+      setLocale: setUiLocale,
       setUiLocale,
       aiResponseLanguage,
       setAiResponseLanguage,
-      t: (key: TranslationKeys) => translate(uiLocale, key),
+      t,
       localeRevision,
     }),
     [
@@ -121,6 +128,7 @@ export function LocaleProvider({ children }: { children: ReactNode }) {
       setUiLocale,
       aiResponseLanguage,
       setAiResponseLanguage,
+      t,
       localeRevision,
     ]
   );
@@ -128,21 +136,13 @@ export function LocaleProvider({ children }: { children: ReactNode }) {
   return (
     <LocaleContext.Provider value={value}>
       <div
-        key={`locale-provider-${uiLocale}-${localeRevision}`}
+        key={`locale-${uiLocale}-${localeRevision}`}
         data-current-locale={uiLocale}
         data-locale-revision={localeRevision}
       >
         {children}
       </div>
     </LocaleContext.Provider>
-  );
-}
-
-/** Forces full subtree remount when UI locale changes (use inside LocaleProvider). */
-export function LocaleRemountBoundary({ children }: { children: ReactNode }) {
-  const { uiLocale, localeRevision } = useLocale();
-  return (
-    <div key={`locale-boundary-${uiLocale}-${localeRevision}`}>{children}</div>
   );
 }
 
@@ -154,12 +154,11 @@ export function useLocale(): LocaleContextValue {
   return ctx;
 }
 
-/** Primary hook for translated UI strings — re-renders when uiLocale changes */
+/**
+ * Primary hook for UI strings.
+ * Returns the context `t` which is reactively bound to the current locale.
+ */
 export function useTranslation() {
-  const { uiLocale, localeRevision } = useLocale();
-  const t = useCallback(
-    (key: TranslationKeys) => translate(uiLocale, key),
-    [uiLocale, localeRevision]
-  );
-  return { uiLocale, localeRevision, t };
+  const { locale, uiLocale, localeRevision, t } = useLocale();
+  return { locale, uiLocale, localeRevision, t };
 }

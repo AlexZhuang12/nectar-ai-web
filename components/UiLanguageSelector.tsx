@@ -6,7 +6,7 @@ import { Globe } from "lucide-react";
 
 /** UI language selector — ONLY calls setUiLocale. Used in Header. */
 export default function UiLanguageSelector() {
-  const { setUiLocale } = useLocale();
+  const { setLocale } = useLocale();
   const { uiLocale, localeRevision, t } = useTranslation();
 
   function handleChange(next: string) {
@@ -16,7 +16,7 @@ export default function UiLanguageSelector() {
       return;
     }
     console.log("UI Language Changed To:", newLang);
-    setUiLocale(newLang);
+    setLocale(newLang);
   }
 
   return (

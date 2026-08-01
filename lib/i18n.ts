@@ -83,7 +83,15 @@ export type TranslationKeys =
   | "checkoutProcessing"
   | "upgradeProShort";
 
-const translations: Record<Locale, Record<TranslationKeys, string>> = {
+/** Lazy-built store — accessed via getDictionary() so locale is never baked in at import time */
+let translationStore: Record<Locale, Record<TranslationKeys, string>> | null =
+  null;
+
+function buildTranslationStore(): Record<
+  Locale,
+  Record<TranslationKeys, string>
+> {
+  return {
   "zh-TW": {
     appTitle: "Nectar AI",
     appSubtitle: "全球智慧工作空間",
@@ -316,38 +324,60 @@ const translations: Record<Locale, Record<TranslationKeys, string>> = {
     checkoutProcessing: "Procesando pago…",
     upgradeProShort: "Pro",
   },
-};
+  };
+}
+
+function getTranslationStore(): Record<
+  Locale,
+  Record<TranslationKeys, string>
+> {
+  if (!translationStore) {
+    translationStore = buildTranslationStore();
+  }
+  return translationStore;
+}
+
+/** Returns the dictionary slice for `locale` at call time (never cached per-locale). */
+export function getDictionary(
+  locale: Locale
+): Record<TranslationKeys, string> {
+  const normalized = normalizeLocale(locale) ?? "en-US";
+  const store = getTranslationStore();
+  return store[normalized] ?? store["en-US"];
+}
+
+/** Factory: returns a translator closed over the given locale argument. */
+export function createTranslator(
+  locale: Locale
+): (key: TranslationKeys) => string {
+  const normalized = normalizeLocale(locale) ?? "en-US";
+  return (key: TranslationKeys) => {
+    const dictionary = getDictionary(normalized);
+    const value = dictionary[key];
+    if (value === undefined) {
+      console.warn(`Missing key: ${key} for locale: ${normalized}`);
+      const store = getTranslationStore();
+      return store["en-US"][key] ?? store["zh-TW"][key] ?? key;
+    }
+    return value;
+  };
+}
 
 /**
- * Stateless translation lookup — reads `translations[locale][key]` on every call.
- * No memoization or cache; always uses the locale argument passed at call time.
+ * Stateless translation lookup — delegates to createTranslator(locale).
+ * Always reads the dictionary for the locale argument passed at call time.
  */
 export function t(locale: Locale, key: TranslationKeys): string {
-  const normalized = normalizeLocale(locale) ?? "en-US";
-  const dictionary = translations[normalized];
-  const value = dictionary?.[key];
-  const result =
-    value ?? translations["en-US"][key] ?? translations["zh-TW"][key] ?? key;
-  console.log(
-    "[i18n] Current Locale:",
-    normalized,
-    "Key:",
-    key,
-    "Result:",
-    result
-  );
-  if (value === undefined) {
-    console.warn(`[i18n] Missing translation: locale=${normalized}, key=${key}`);
-  }
-  return result;
+  return createTranslator(locale)(key);
 }
 
 /** Dev helper: verify all locales have identical key sets */
 export function validateTranslations(): boolean {
-  const baseKeys = Object.keys(translations["zh-TW"]) as TranslationKeys[];
+  const store = getTranslationStore();
+  const baseKeys = Object.keys(store["zh-TW"]) as TranslationKeys[];
   let ok = true;
   for (const locale of VALID_LOCALES) {
-    const keys = Object.keys(translations[locale]) as TranslationKeys[];
+    const keys = Object.keys(store[locale]) as TranslationKeys[];
     for (const key of baseKeys) {
       if (!keys.includes(key)) {
         console.error(`[i18n] Missing key "${key}" in locale "${locale}"`);
