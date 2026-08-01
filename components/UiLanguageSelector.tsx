@@ -1,70 +1,38 @@
 "use client";
 
-import { isCanonicalLocale, normalizeLocale } from "@/lib/i18n";
-import type { Locale } from "@/lib/types";
 import { useLocale } from "@/context/LocaleContext";
 import { Globe } from "lucide-react";
 
-/** Canonical UI locale options — values MUST match VALID_LOCALES exactly */
-const UI_LANGUAGE_OPTIONS: {
-  value: Locale;
-  label: string;
-  flag: string;
-}[] = [
-  { value: "zh-TW", label: "繁體中文", flag: "🇹🇼" },
-  { value: "en-US", label: "English", flag: "🇺🇸" },
-  { value: "ja-JP", label: "日本語", flag: "🇯🇵" },
-  { value: "es-ES", label: "Español", flag: "🇪🇸" },
+const OPTIONS = [
+  { value: "zh-TW", label: "🇹🇼 繁體中文" },
+  { value: "en-US", label: "🇺🇸 English" },
+  { value: "ja-JP", label: "🇯🇵 日本語" },
+  { value: "es-ES", label: "🇪🇸 Español" },
 ];
 
-/** UI language selector — ONLY user action writes nectar-ui-locale */
 export default function UiLanguageSelector() {
-  const { setUiLocale, uiLocale, t } = useLocale();
-
-  function handleChange(raw: string) {
-    const locale: Locale | null = isCanonicalLocale(raw)
-      ? raw
-      : normalizeLocale(raw);
-
-    if (!locale) {
-      console.warn("[UiLanguageSelector] Invalid selection:", raw);
-      return;
-    }
-
-    console.log("UI Language Changed To:", locale);
-    // setUiLocale is the sole writer + reload (no mount-time overwrites elsewhere)
-    setUiLocale(locale);
-  }
+  const { uiLocale, setUiLocale } = useLocale();
 
   return (
-    <div
-      className="relative inline-flex flex-col gap-1"
-      data-selector="ui-language"
-      data-value={uiLocale}
-    >
-      <label
-        htmlFor="ui-language-select"
-        className="text-xs font-medium text-gray-500 dark:text-gray-400"
+    <div className="flex items-center gap-1.5 rounded-lg border border-gray-200 bg-white px-2 py-1 dark:border-gray-800 dark:bg-gray-900">
+      <Globe className="h-4 w-4 text-gray-500" />
+      <select
+        value={uiLocale || "zh-TW"}
+        onChange={(e) => {
+          const val = e.target.value;
+          console.log("--> Changing UI Locale to:", val);
+          setUiLocale(val as any);
+          localStorage.setItem("nectar-ui-locale", val);
+          window.location.reload();
+        }}
+        className="cursor-pointer bg-transparent text-xs font-medium text-gray-700 outline-none dark:text-gray-200"
       >
-        {t("uiLanguage")}
-      </label>
-      <div className="inline-flex items-center gap-2">
-        <Globe className="h-4 w-4 shrink-0 text-gray-500" />
-        <select
-          id="ui-language-select"
-          name="ui-language"
-          value={uiLocale}
-          onChange={(e) => handleChange(e.target.value)}
-          className="select-field cursor-pointer pr-8"
-          aria-label={t("uiLanguage")}
-        >
-          {UI_LANGUAGE_OPTIONS.map((option) => (
-            <option key={option.value} value={option.value}>
-              {option.flag} {option.label}
-            </option>
-          ))}
-        </select>
-      </div>
+        {OPTIONS.map((opt) => (
+          <option key={opt.value} value={opt.value}>
+            {opt.label}
+          </option>
+        ))}
+      </select>
     </div>
   );
 }
