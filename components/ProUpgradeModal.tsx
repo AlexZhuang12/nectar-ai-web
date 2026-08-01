@@ -1,6 +1,6 @@
 "use client";
 
-import { useTranslation } from "@/context/LocaleContext";
+import { useLocale } from "@/context/LocaleContext";
 import { faCheck, faCrown } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { CreditCard, Loader2, X, Zap } from "lucide-react";
@@ -12,7 +12,7 @@ interface ProUpgradeModalProps {
 }
 
 export default function ProUpgradeModal({ isOpen, onClose }: ProUpgradeModalProps) {
-  const { locale, t } = useTranslation();
+  const { uiLocale, t } = useLocale();
   const [checkingOut, setCheckingOut] = useState(false);
   const [checkoutDone, setCheckoutDone] = useState(false);
 
@@ -33,7 +33,7 @@ export default function ProUpgradeModal({ isOpen, onClose }: ProUpgradeModalProp
   return (
     <div
       className="fixed inset-0 z-50 flex items-center justify-center p-4"
-      data-ui-locale={locale}
+      data-ui-locale={uiLocale}
     >
       <div
         className="absolute inset-0 bg-black/50 backdrop-blur-sm"

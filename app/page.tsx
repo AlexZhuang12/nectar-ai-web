@@ -7,12 +7,12 @@ import Header from "@/components/Header";
 import KnowledgeHistory from "@/components/KnowledgeHistory";
 import ProUpgradeModal from "@/components/ProUpgradeModal";
 import Providers from "@/components/Providers";
-import { useTranslation } from "@/context/LocaleContext";
+import { useLocale } from "@/context/LocaleContext";
 import type { ExtractResult } from "@/lib/types";
 import { useCallback, useEffect, useState } from "react";
 
 function Dashboard() {
-  const { locale } = useTranslation();
+  const { uiLocale } = useLocale();
   const [credits, setCredits] = useState(100);
   const [showProModal, setShowProModal] = useState(false);
   const [showFeedbackModal, setShowFeedbackModal] = useState(false);
@@ -32,7 +32,7 @@ function Dashboard() {
 
   return (
     <div
-      data-ui-locale={locale}
+      data-ui-locale={uiLocale}
       className="min-h-screen bg-gradient-to-b from-nectar-50/50 to-white dark:from-gray-950 dark:to-gray-900"
     >
       <Header

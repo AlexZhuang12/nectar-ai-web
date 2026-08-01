@@ -1,7 +1,7 @@
 "use client";
 
 import { getHistory } from "@/app/actions/extract";
-import { useTranslation } from "@/context/LocaleContext";
+import { useLocale } from "@/context/LocaleContext";
 import type { KnowledgeRecord } from "@/lib/types";
 import { faLink } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
@@ -22,7 +22,7 @@ interface KnowledgeHistoryProps {
 export default function KnowledgeHistory({
   refreshKey = 0,
 }: KnowledgeHistoryProps) {
-  const { locale, t } = useTranslation();
+  const { uiLocale, t } = useLocale();
   const [records, setRecords] = useState<KnowledgeRecord[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -44,8 +44,7 @@ export default function KnowledgeHistory({
 
   return (
     <section
-      key={`history-${locale}`}
-      data-ui-locale={locale}
+      data-ui-locale={uiLocale}
       className="card"
     >
       <div className="mb-4 flex items-center justify-between">
@@ -84,8 +83,8 @@ export default function KnowledgeHistory({
 }
 
 function HistoryItem({ record }: { record: KnowledgeRecord }) {
-  const { locale, t } = useTranslation();
-  const date = new Date(record.created_at).toLocaleString(locale);
+  const { uiLocale, t } = useLocale();
+  const date = new Date(record.created_at).toLocaleString(uiLocale);
 
   return (
     <article className="rounded-lg border border-gray-200 p-4 transition hover:border-nectar-200 hover:shadow-sm dark:border-gray-700 dark:hover:border-nectar-800">

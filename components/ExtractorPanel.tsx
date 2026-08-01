@@ -1,8 +1,8 @@
 "use client";
 
 import { extractInformation } from "@/app/actions/extract";
-import LanguageSelector from "@/components/LanguageSelector";
-import { useTranslation } from "@/context/LocaleContext";
+import AiLanguageSelector from "@/components/AiLanguageSelector";
+import { useLocale } from "@/context/LocaleContext";
 import type {
   AlignmentPair,
   ExtractionMode,
@@ -45,8 +45,7 @@ export default function ExtractorPanel({
   onCreditsUpdate,
   onUpgradeClick,
 }: ExtractorPanelProps) {
-  const { locale, t, aiResponseLanguage, setAiResponseLanguage } =
-    useTranslation();
+  const { uiLocale, t, aiResponseLanguage } = useLocale();
   const [input, setInput] = useState("");
   const [mode, setMode] = useState<ExtractionMode>("both");
   const [loading, setLoading] = useState(false);
@@ -55,7 +54,7 @@ export default function ExtractorPanel({
 
   useEffect(() => {
     setError(null);
-  }, [locale]);
+  }, [uiLocale]);
 
   const isUrl = (() => {
     try {
@@ -102,7 +101,7 @@ export default function ExtractorPanel({
   }
 
   return (
-    <section key={`extractor-${locale}`} data-ui-locale={locale} className="card">
+    <section data-ui-locale={uiLocale} className="card">
       <div className="mb-6">
         <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
           {t("extractorTitle")}
@@ -132,11 +131,7 @@ export default function ExtractorPanel({
 
         <div className="grid gap-4 sm:grid-cols-2">
           <div>
-            <LanguageSelector
-              value={aiResponseLanguage}
-              onChange={setAiResponseLanguage}
-              variant="ai"
-            />
+            <AiLanguageSelector />
             <p className="mt-1 text-xs text-gray-400 dark:text-gray-500">
               {t("aiResponseLanguageHint")}
             </p>
@@ -223,7 +218,7 @@ export default function ExtractorPanel({
 }
 
 function KeyInfoDisplay({ items }: { items: KeyInfoItem[] }) {
-  const { t } = useTranslation();
+  const { t } = useLocale();
 
   return (
     <div>
@@ -251,7 +246,7 @@ function KeyInfoDisplay({ items }: { items: KeyInfoItem[] }) {
 }
 
 function AlignmentDisplay({ pairs }: { pairs: AlignmentPair[] }) {
-  const { t } = useTranslation();
+  const { t } = useLocale();
 
   return (
     <div>
