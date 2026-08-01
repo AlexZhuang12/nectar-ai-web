@@ -1,20 +1,56 @@
 import type { Locale } from "./types";
 
-const VALID_LOCALES: Locale[] = ["zh-TW", "en-US", "ja-JP", "es-ES"];
+export const CANONICAL_LOCALES: Locale[] = ["zh-TW", "en-US", "ja-JP", "es-ES"];
 
-/** Map legacy/shorthand codes to canonical locale keys */
+const VALID_LOCALES: Locale[] = CANONICAL_LOCALES;
+
+/** Map legacy/shorthand codes to canonical locale keys (lookup keys are lowercased, hyphenated) */
 const LOCALE_ALIASES: Record<string, Locale> = {
   en: "en-US",
+  "en-us": "en-US",
   zh: "zh-TW",
+  "zh-tw": "zh-TW",
+  "zh-cn": "zh-TW",
   ja: "ja-JP",
+  "ja-jp": "ja-JP",
   es: "es-ES",
+  "es-es": "es-ES",
 };
 
+function normalizeLocaleKey(value: string): string {
+  return value.trim().toLowerCase().replace(/_/g, "-");
+}
+
+export function isCanonicalLocale(value: string): value is Locale {
+  return CANONICAL_LOCALES.includes(value as Locale);
+}
+
+/**
+ * Normalize any common locale string to a canonical Locale.
+ * Case-insensitive; accepts hyphens or underscores.
+ */
 export function normalizeLocale(value: string | null | undefined): Locale | null {
   if (!value) return null;
-  const trimmed = value.trim();
-  if (VALID_LOCALES.includes(trimmed as Locale)) return trimmed as Locale;
-  if (trimmed in LOCALE_ALIASES) return LOCALE_ALIASES[trimmed];
+
+  const key = normalizeLocaleKey(value);
+
+  // Exact canonical match (case-insensitive, e.g. "en-us" -> "en-US")
+  for (const locale of VALID_LOCALES) {
+    if (normalizeLocaleKey(locale) === key) {
+      return locale;
+    }
+  }
+
+  if (key in LOCALE_ALIASES) {
+    return LOCALE_ALIASES[key];
+  }
+
+  // Prefix fallback for common language families
+  if (key.startsWith("en")) return "en-US";
+  if (key.startsWith("zh")) return "zh-TW";
+  if (key.startsWith("ja")) return "ja-JP";
+  if (key.startsWith("es")) return "es-ES";
+
   return null;
 }
 

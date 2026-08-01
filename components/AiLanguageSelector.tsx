@@ -1,6 +1,6 @@
 "use client";
 
-import { normalizeLocale, LOCALES } from "@/lib/i18n";
+import { isCanonicalLocale, LOCALES, normalizeLocale } from "@/lib/i18n";
 import { useLocale, useTranslation } from "@/context/LocaleContext";
 import { Languages } from "lucide-react";
 
@@ -10,7 +10,7 @@ export default function AiLanguageSelector() {
   const { uiLocale, localeRevision, t } = useTranslation();
 
   function handleChange(next: string) {
-    const locale = normalizeLocale(next);
+    const locale = isCanonicalLocale(next) ? next : normalizeLocale(next);
     if (!locale) return;
     console.log("[AiLanguageSelector] AI Language Changed To:", locale);
     setAiResponseLanguage(locale);
