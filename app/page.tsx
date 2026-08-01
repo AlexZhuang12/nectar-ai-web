@@ -6,12 +6,13 @@ import FeedbackModal from "@/components/FeedbackModal";
 import Header from "@/components/Header";
 import KnowledgeHistory from "@/components/KnowledgeHistory";
 import ProUpgradeModal from "@/components/ProUpgradeModal";
-import { useLocale } from "@/context/LocaleContext";
+import Providers from "@/components/Providers";
+import { useTranslation } from "@/context/LocaleContext";
 import type { ExtractResult } from "@/lib/types";
 import { useCallback, useEffect, useState } from "react";
 
-export default function Dashboard() {
-  const { uiLocale } = useLocale();
+function Dashboard() {
+  const { locale } = useTranslation();
   const [credits, setCredits] = useState(100);
   const [showProModal, setShowProModal] = useState(false);
   const [showFeedbackModal, setShowFeedbackModal] = useState(false);
@@ -31,7 +32,7 @@ export default function Dashboard() {
 
   return (
     <div
-      key={uiLocale}
+      data-ui-locale={locale}
       className="min-h-screen bg-gradient-to-b from-nectar-50/50 to-white dark:from-gray-950 dark:to-gray-900"
     >
       <Header
@@ -60,5 +61,13 @@ export default function Dashboard() {
         onClose={() => setShowFeedbackModal(false)}
       />
     </div>
+  );
+}
+
+export default function Page() {
+  return (
+    <Providers>
+      <Dashboard />
+    </Providers>
   );
 }

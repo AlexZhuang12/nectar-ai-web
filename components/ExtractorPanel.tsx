@@ -2,7 +2,7 @@
 
 import { extractInformation } from "@/app/actions/extract";
 import LanguageSelector from "@/components/LanguageSelector";
-import { useLocale } from "@/context/LocaleContext";
+import { useTranslation } from "@/context/LocaleContext";
 import type {
   AlignmentPair,
   ExtractionMode,
@@ -18,7 +18,7 @@ import {
   Loader2,
   Sparkles,
 } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 interface ExtractorPanelProps {
   onExtractComplete: (result: ExtractResult) => void;
@@ -45,12 +45,17 @@ export default function ExtractorPanel({
   onCreditsUpdate,
   onUpgradeClick,
 }: ExtractorPanelProps) {
-  const { aiResponseLanguage, setAiResponseLanguage, t } = useLocale();
+  const { locale, t, aiResponseLanguage, setAiResponseLanguage } =
+    useTranslation();
   const [input, setInput] = useState("");
   const [mode, setMode] = useState<ExtractionMode>("both");
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<ExtractResult | null>(null);
   const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    setError(null);
+  }, [locale]);
 
   const isUrl = (() => {
     try {
@@ -79,7 +84,7 @@ export default function ExtractorPanel({
           setError(t("errorInsufficientCredits"));
           onUpgradeClick();
         } else {
-          setError(res.error ?? t("errorGeneric"));
+          setError(t("errorGeneric"));
         }
         return;
       }
@@ -97,7 +102,7 @@ export default function ExtractorPanel({
   }
 
   return (
-    <section className="card">
+    <section key={`extractor-${locale}`} data-ui-locale={locale} className="card">
       <div className="mb-6">
         <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
           {t("extractorTitle")}
@@ -128,7 +133,7 @@ export default function ExtractorPanel({
         <div className="grid gap-4 sm:grid-cols-2">
           <div>
             <LanguageSelector
-              locale={aiResponseLanguage}
+              value={aiResponseLanguage}
               onChange={setAiResponseLanguage}
               variant="ai"
             />
@@ -218,7 +223,7 @@ export default function ExtractorPanel({
 }
 
 function KeyInfoDisplay({ items }: { items: KeyInfoItem[] }) {
-  const { t } = useLocale();
+  const { t } = useTranslation();
 
   return (
     <div>
@@ -246,7 +251,7 @@ function KeyInfoDisplay({ items }: { items: KeyInfoItem[] }) {
 }
 
 function AlignmentDisplay({ pairs }: { pairs: AlignmentPair[] }) {
-  const { t } = useLocale();
+  const { t } = useTranslation();
 
   return (
     <div>

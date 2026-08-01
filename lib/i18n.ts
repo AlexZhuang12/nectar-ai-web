@@ -301,8 +301,31 @@ const translations: Record<Locale, Record<TranslationKeys, string>> = {
 };
 
 export function t(locale: Locale, key: TranslationKeys): string {
-  return translations[locale][key];
+  const value = translations[locale]?.[key];
+  if (value === undefined) {
+    console.warn(`[i18n] Missing translation: locale=${locale}, key=${key}`);
+    return translations["en-US"][key] ?? key;
+  }
+  return value;
 }
+
+/** Dev helper: verify all locales have identical key sets */
+export function validateTranslations(): boolean {
+  const baseKeys = Object.keys(translations["zh-TW"]) as TranslationKeys[];
+  let ok = true;
+  for (const locale of VALID_LOCALES) {
+    const keys = Object.keys(translations[locale]) as TranslationKeys[];
+    for (const key of baseKeys) {
+      if (!keys.includes(key)) {
+        console.error(`[i18n] Missing key "${key}" in locale "${locale}"`);
+        ok = false;
+      }
+    }
+  }
+  return ok;
+}
+
+const VALID_LOCALES: Locale[] = ["zh-TW", "en-US", "ja-JP", "es-ES"];
 
 export function getLocaleLabel(locale: Locale): string {
   return LOCALES.find((l) => l.value === locale)?.label ?? locale;

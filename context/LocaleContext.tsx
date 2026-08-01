@@ -5,11 +5,10 @@ import type { TranslationKeys } from "@/lib/i18n";
 import type { Locale } from "@/lib/types";
 import {
   createContext,
-  useCallback,
   useContext,
   useEffect,
-  useMemo,
   useState,
+  type ReactNode,
 } from "react";
 
 const UI_LOCALE_KEY = "nectar-ui-locale";
@@ -21,7 +20,7 @@ function isValidLocale(value: string | null): value is Locale {
   return value !== null && VALID_LOCALES.includes(value as Locale);
 }
 
-interface LocaleContextValue {
+export interface LocaleContextValue {
   uiLocale: Locale;
   setUiLocale: (locale: Locale) => void;
   aiResponseLanguage: Locale;
@@ -29,9 +28,9 @@ interface LocaleContextValue {
   t: (key: TranslationKeys) => string;
 }
 
-const LocaleContext = createContext<LocaleContextValue | null>(null);
+export const LocaleContext = createContext<LocaleContextValue | null>(null);
 
-export function LocaleProvider({ children }: { children: React.ReactNode }) {
+export function LocaleProvider({ children }: { children: ReactNode }) {
   const [uiLocale, setUiLocaleState] = useState<Locale>("zh-TW");
   const [aiResponseLanguage, setAiResponseLanguageState] =
     useState<Locale>("en-US");
@@ -40,8 +39,19 @@ export function LocaleProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     const savedUi = localStorage.getItem(UI_LOCALE_KEY);
     const savedAi = localStorage.getItem(AI_LOCALE_KEY);
-    if (isValidLocale(savedUi)) setUiLocaleState(savedUi);
-    if (isValidLocale(savedAi)) setAiResponseLanguageState(savedAi);
+    if (isValidLocale(savedUi)) {
+      setUiLocaleState(savedUi);
+      console.log("[LocaleContext] Restored UI locale from storage:", savedUi);
+    }
+    if (isValidLocale(savedAi)) {
+      setAiResponseLanguageState(savedAi);
+      console.log("[LocaleContext] Restored AI locale from storage:", savedAi);
+    }
+    if (process.env.NODE_ENV === "development") {
+      import("@/lib/i18n").then(({ validateTranslations }) => {
+        validateTranslations();
+      });
+    }
     setHydrated(true);
   }, []);
 
@@ -49,46 +59,72 @@ export function LocaleProvider({ children }: { children: React.ReactNode }) {
     if (!hydrated) return;
     document.documentElement.lang = uiLocale;
     localStorage.setItem(UI_LOCALE_KEY, uiLocale);
+    console.log("[LocaleContext] currentLocale (UI):", uiLocale);
   }, [uiLocale, hydrated]);
 
   useEffect(() => {
     if (!hydrated) return;
     localStorage.setItem(AI_LOCALE_KEY, aiResponseLanguage);
+    console.log("[LocaleContext] currentLocale (AI response):", aiResponseLanguage);
   }, [aiResponseLanguage, hydrated]);
 
-  const setUiLocale = useCallback((locale: Locale) => {
+  function setUiLocale(locale: Locale) {
+    if (!isValidLocale(locale)) {
+      console.warn("[LocaleContext] Invalid UI locale rejected:", locale);
+      return;
+    }
+    console.log("[LocaleContext] UI locale changing:", uiLocale, "→", locale);
     setUiLocaleState(locale);
-  }, []);
+  }
 
-  const setAiResponseLanguage = useCallback((locale: Locale) => {
-    setAiResponseLanguageState(locale);
-  }, []);
-
-  const t = useCallback(
-    (key: TranslationKeys) => translate(uiLocale, key),
-    [uiLocale]
-  );
-
-  const value = useMemo(
-    () => ({
-      uiLocale,
-      setUiLocale,
+  function setAiResponseLanguage(locale: Locale) {
+    if (!isValidLocale(locale)) {
+      console.warn("[LocaleContext] Invalid AI locale rejected:", locale);
+      return;
+    }
+    console.log(
+      "[LocaleContext] AI response language changing:",
       aiResponseLanguage,
-      setAiResponseLanguage,
-      t,
-    }),
-    [uiLocale, setUiLocale, aiResponseLanguage, setAiResponseLanguage, t]
-  );
+      "→",
+      locale
+    );
+    setAiResponseLanguageState(locale);
+  }
+
+  function t(key: TranslationKeys): string {
+    return translate(uiLocale, key);
+  }
+
+  const value: LocaleContextValue = {
+    uiLocale,
+    setUiLocale,
+    aiResponseLanguage,
+    setAiResponseLanguage,
+    t,
+  };
 
   return (
     <LocaleContext.Provider value={value}>{children}</LocaleContext.Provider>
   );
 }
 
-export function useLocale() {
+export function useLocale(): LocaleContextValue {
   const ctx = useContext(LocaleContext);
   if (!ctx) {
     throw new Error("useLocale must be used within LocaleProvider");
   }
   return ctx;
+}
+
+/** Subscribe to uiLocale explicitly — guarantees re-render on language switch */
+export function useTranslation() {
+  const { uiLocale, t, setUiLocale, aiResponseLanguage, setAiResponseLanguage } =
+    useLocale();
+  return {
+    locale: uiLocale,
+    t,
+    setLocale: setUiLocale,
+    aiResponseLanguage,
+    setAiResponseLanguage,
+  };
 }

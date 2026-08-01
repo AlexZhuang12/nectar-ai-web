@@ -1,7 +1,7 @@
 "use client";
 
 import LanguageSelector from "@/components/LanguageSelector";
-import { useLocale } from "@/context/LocaleContext";
+import { useTranslation } from "@/context/LocaleContext";
 import { faCrown } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { Coins, MessageSquare, Sparkles } from "lucide-react";
@@ -17,10 +17,14 @@ export default function Header({
   onUpgradeClick,
   onFeedbackClick,
 }: HeaderProps) {
-  const { uiLocale, setUiLocale, t } = useLocale();
+  const { locale, t, setLocale } = useTranslation();
 
   return (
-    <header className="sticky top-0 z-40 border-b border-gray-200 bg-white/80 backdrop-blur-md dark:border-gray-800 dark:bg-gray-950/80">
+    <header
+      key={`header-${locale}`}
+      data-ui-locale={locale}
+      className="sticky top-0 z-40 border-b border-gray-200 bg-white/80 backdrop-blur-md dark:border-gray-800 dark:bg-gray-950/80"
+    >
       <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-4 sm:px-6">
         <div className="flex items-center gap-3">
           <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-nectar-400 to-nectar-600 text-white shadow-md">
@@ -38,8 +42,8 @@ export default function Header({
 
         <div className="flex items-end gap-3 sm:gap-4">
           <LanguageSelector
-            locale={uiLocale}
-            onChange={setUiLocale}
+            value={locale}
+            onChange={setLocale}
             variant="ui"
           />
 
