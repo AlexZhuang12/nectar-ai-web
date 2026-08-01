@@ -1,13 +1,13 @@
 "use client";
 
-import { LOCALES, t } from "@/lib/i18n";
+import { LOCALES } from "@/lib/i18n";
 import type { Locale } from "@/lib/types";
 import { Globe, Languages } from "lucide-react";
+import { useLocale } from "@/context/LocaleContext";
 
 interface LanguageSelectorProps {
   locale: Locale;
   onChange: (locale: Locale) => void;
-  /** When true, renders AI response language selector */
   variant?: "ui" | "ai";
 }
 
@@ -16,8 +16,10 @@ export default function LanguageSelector({
   onChange,
   variant = "ui",
 }: LanguageSelectorProps) {
+  const { t } = useLocale();
+
   const label =
-    variant === "ui" ? t(locale, "uiLanguage") : t(locale, "aiResponseLanguage");
+    variant === "ui" ? t("uiLanguage") : t("aiResponseLanguage");
   const Icon = variant === "ui" ? Globe : Languages;
 
   return (
@@ -43,5 +45,3 @@ export default function LanguageSelector({
     </div>
   );
 }
-
-export { t };

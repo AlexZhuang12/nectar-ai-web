@@ -1,23 +1,18 @@
 "use client";
 
-import { t } from "@/lib/i18n";
-import type { Locale } from "@/lib/types";
+import { useLocale } from "@/context/LocaleContext";
 import { faCheck, faCrown } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { CreditCard, Loader2, X, Zap } from "lucide-react";
 import { useState } from "react";
 
 interface ProUpgradeModalProps {
-  locale: Locale;
   isOpen: boolean;
   onClose: () => void;
 }
 
-export default function ProUpgradeModal({
-  locale,
-  isOpen,
-  onClose,
-}: ProUpgradeModalProps) {
+export default function ProUpgradeModal({ isOpen, onClose }: ProUpgradeModalProps) {
+  const { t } = useLocale();
   const [checkingOut, setCheckingOut] = useState(false);
   const [checkoutDone, setCheckoutDone] = useState(false);
 
@@ -45,7 +40,7 @@ export default function ProUpgradeModal({
         <button
           onClick={handleClose}
           className="absolute right-4 top-4 rounded-lg p-1 text-gray-400 transition hover:bg-gray-100 hover:text-gray-600 dark:hover:bg-gray-800"
-          aria-label={t(locale, "close")}
+          aria-label={t("close")}
         >
           <X className="h-5 w-5" />
         </button>
@@ -55,10 +50,10 @@ export default function ProUpgradeModal({
             <FontAwesomeIcon icon={faCrown} className="h-7 w-7" />
           </div>
           <h2 className="text-xl font-bold text-gray-900 dark:text-white">
-            {t(locale, "proModalTitle")}
+            {t("proModalTitle")}
           </h2>
           <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">
-            {t(locale, "proModalDesc")}
+            {t("proModalDesc")}
           </p>
         </div>
 
@@ -68,16 +63,16 @@ export default function ProUpgradeModal({
               <FontAwesomeIcon icon={faCheck} className="h-6 w-6" />
             </div>
             <p className="text-sm font-medium text-green-700 dark:text-green-300">
-              {t(locale, "checkoutSimulated")}
+              {t("checkoutSimulated")}
             </p>
             <button onClick={handleClose} className="btn-primary w-full">
-              {t(locale, "close")}
+              {t("close")}
             </button>
           </div>
         ) : (
           <>
             <ul className="mb-6 space-y-3">
-              {[t(locale, "proFeature1"), t(locale, "proFeature2"), t(locale, "proFeature3")].map(
+              {[t("proFeature1"), t("proFeature2"), t("proFeature3")].map(
                 (feature) => (
                   <li
                     key={feature}
@@ -92,7 +87,7 @@ export default function ProUpgradeModal({
 
             <div className="mb-6 rounded-xl bg-gradient-to-r from-amber-50 to-nectar-50 p-4 text-center dark:from-amber-950/30 dark:to-nectar-950/30">
               <p className="text-2xl font-bold text-gray-900 dark:text-white">
-                {t(locale, "proPrice")}
+                {t("proPrice")}
               </p>
             </div>
 
@@ -104,12 +99,12 @@ export default function ProUpgradeModal({
               {checkingOut ? (
                 <>
                   <Loader2 className="h-4 w-4 animate-spin" />
-                  Stripe…
+                  {t("checkoutProcessing")}
                 </>
               ) : (
                 <>
                   <CreditCard className="h-4 w-4" />
-                  {t(locale, "checkout")}
+                  {t("checkout")}
                 </>
               )}
             </button>

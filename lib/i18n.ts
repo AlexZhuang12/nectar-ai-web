@@ -7,7 +7,7 @@ export const LOCALES: { value: Locale; label: string; flag: string }[] = [
   { value: "es-ES", label: "Español", flag: "🇪🇸" },
 ];
 
-type TranslationKeys =
+export type TranslationKeys =
   | "appTitle"
   | "appSubtitle"
   | "uiLanguage"
@@ -57,7 +57,13 @@ type TranslationKeys =
   | "feedbackSubmit"
   | "feedbackSubmitting"
   | "feedbackThankYou"
-  | "feedbackError";
+  | "feedbackError"
+  | "loading"
+  | "refresh"
+  | "keysCount"
+  | "pairsCount"
+  | "checkoutProcessing"
+  | "upgradeProShort";
 
 const translations: Record<Locale, Record<TranslationKeys, string>> = {
   "zh-TW": {
@@ -111,6 +117,12 @@ const translations: Record<Locale, Record<TranslationKeys, string>> = {
     feedbackSubmitting: "提交中…",
     feedbackThankYou: "感謝您的反饋！我們會盡快處理。",
     feedbackError: "提交失敗，請稍後再試",
+    loading: "載入中…",
+    refresh: "重新整理",
+    keysCount: "個要點",
+    pairsCount: "組對齊",
+    checkoutProcessing: "結帳處理中…",
+    upgradeProShort: "Pro",
   },
   "en-US": {
     appTitle: "Nectar AI",
@@ -163,6 +175,12 @@ const translations: Record<Locale, Record<TranslationKeys, string>> = {
     feedbackSubmitting: "Submitting…",
     feedbackThankYou: "Thank you for your feedback! We'll review it soon.",
     feedbackError: "Submission failed. Please try again",
+    loading: "Loading…",
+    refresh: "Refresh",
+    keysCount: "keys",
+    pairsCount: "pairs",
+    checkoutProcessing: "Processing checkout…",
+    upgradeProShort: "Pro",
   },
   "ja-JP": {
     appTitle: "Nectar AI",
@@ -215,6 +233,12 @@ const translations: Record<Locale, Record<TranslationKeys, string>> = {
     feedbackSubmitting: "送信中…",
     feedbackThankYou: "フィードバックありがとうございます！",
     feedbackError: "送信に失敗しました。後でもう一度お試しください",
+    loading: "読み込み中…",
+    refresh: "更新",
+    keysCount: "件の要点",
+    pairsCount: "組のアライメント",
+    checkoutProcessing: "チェックアウト処理中…",
+    upgradeProShort: "Pro",
   },
   "es-ES": {
     appTitle: "Nectar AI",
@@ -267,6 +291,12 @@ const translations: Record<Locale, Record<TranslationKeys, string>> = {
     feedbackSubmitting: "Enviando…",
     feedbackThankYou: "¡Gracias por sus comentarios! Los revisaremos pronto.",
     feedbackError: "Error al enviar. Inténtelo de nuevo",
+    loading: "Cargando…",
+    refresh: "Actualizar",
+    keysCount: "puntos clave",
+    pairsCount: "pares",
+    checkoutProcessing: "Procesando pago…",
+    upgradeProShort: "Pro",
   },
 };
 

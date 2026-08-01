@@ -1,15 +1,14 @@
 "use client";
 
-import { t } from "@/lib/i18n";
-import type { FeedbackCategory, Locale } from "@/lib/types";
+import { submitFeedback } from "@/app/actions/feedback";
+import { useLocale } from "@/context/LocaleContext";
+import type { FeedbackCategory } from "@/lib/types";
 import { faCheck } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { Bug, Lightbulb, Loader2, MessageSquare, X } from "lucide-react";
 import { useState } from "react";
-import { submitFeedback } from "@/app/actions/feedback";
 
 interface FeedbackModalProps {
-  locale: Locale;
   isOpen: boolean;
   onClose: () => void;
 }
@@ -27,11 +26,8 @@ const CATEGORIES: {
   { value: "other", labelKey: "feedbackCategoryOther", icon: MessageSquare },
 ];
 
-export default function FeedbackModal({
-  locale,
-  isOpen,
-  onClose,
-}: FeedbackModalProps) {
+export default function FeedbackModal({ isOpen, onClose }: FeedbackModalProps) {
+  const { uiLocale, t } = useLocale();
   const [category, setCategory] = useState<FeedbackCategory>("feature");
   const [message, setMessage] = useState("");
   const [submitting, setSubmitting] = useState(false);
@@ -57,17 +53,17 @@ export default function FeedbackModal({
       const result = await submitFeedback({
         category,
         message: message.trim(),
-        uiLocale: locale,
+        uiLocale,
       });
 
       if (!result.success) {
-        setError(result.error ?? t(locale, "feedbackError"));
+        setError(result.error ?? t("feedbackError"));
         return;
       }
 
       setDone(true);
     } catch {
-      setError(t(locale, "feedbackError"));
+      setError(t("feedbackError"));
     } finally {
       setSubmitting(false);
     }
@@ -83,7 +79,7 @@ export default function FeedbackModal({
         <button
           onClick={handleClose}
           className="absolute right-4 top-4 rounded-lg p-1 text-gray-400 transition hover:bg-gray-100 hover:text-gray-600 dark:hover:bg-gray-800"
-          aria-label={t(locale, "close")}
+          aria-label={t("close")}
         >
           <X className="h-5 w-5" />
         </button>
@@ -94,27 +90,27 @@ export default function FeedbackModal({
               <FontAwesomeIcon icon={faCheck} className="h-6 w-6" />
             </div>
             <p className="text-sm font-medium text-green-700 dark:text-green-300">
-              {t(locale, "feedbackThankYou")}
+              {t("feedbackThankYou")}
             </p>
             <button onClick={handleClose} className="btn-primary w-full">
-              {t(locale, "close")}
+              {t("close")}
             </button>
           </div>
         ) : (
           <>
             <div className="mb-5">
               <h2 className="text-xl font-bold text-gray-900 dark:text-white">
-                {t(locale, "feedbackTitle")}
+                {t("feedbackTitle")}
               </h2>
               <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
-                {t(locale, "feedbackDesc")}
+                {t("feedbackDesc")}
               </p>
             </div>
 
             <div className="space-y-4">
               <div>
                 <label className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
-                  {t(locale, "feedbackCategory")}
+                  {t("feedbackCategory")}
                 </label>
                 <div className="grid grid-cols-3 gap-2">
                   {CATEGORIES.map(({ value, labelKey, icon: Icon }) => (
@@ -129,7 +125,7 @@ export default function FeedbackModal({
                       }`}
                     >
                       <Icon className="h-4 w-4" />
-                      {t(locale, labelKey)}
+                      {t(labelKey)}
                     </button>
                   ))}
                 </div>
@@ -137,12 +133,12 @@ export default function FeedbackModal({
 
               <div>
                 <label className="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-300">
-                  {t(locale, "feedbackMessage")}
+                  {t("feedbackMessage")}
                 </label>
                 <textarea
                   value={message}
                   onChange={(e) => setMessage(e.target.value)}
-                  placeholder={t(locale, "feedbackMessagePlaceholder")}
+                  placeholder={t("feedbackMessagePlaceholder")}
                   rows={4}
                   className="input-field resize-none"
                 />
@@ -160,12 +156,12 @@ export default function FeedbackModal({
                 {submitting ? (
                   <>
                     <Loader2 className="h-4 w-4 animate-spin" />
-                    {t(locale, "feedbackSubmitting")}
+                    {t("feedbackSubmitting")}
                   </>
                 ) : (
                   <>
                     <MessageSquare className="h-4 w-4" />
-                    {t(locale, "feedbackSubmit")}
+                    {t("feedbackSubmit")}
                   </>
                 )}
               </button>

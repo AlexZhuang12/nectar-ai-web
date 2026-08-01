@@ -2,13 +2,12 @@
 
 import { extractInformation } from "@/app/actions/extract";
 import LanguageSelector from "@/components/LanguageSelector";
-import { t } from "@/lib/i18n";
+import { useLocale } from "@/context/LocaleContext";
 import type {
   AlignmentPair,
   ExtractionMode,
   ExtractResult,
   KeyInfoItem,
-  Locale,
 } from "@/lib/types";
 import { faLink, faAlignLeft } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
@@ -22,9 +21,6 @@ import {
 import { useState } from "react";
 
 interface ExtractorPanelProps {
-  uiLocale: Locale;
-  aiResponseLanguage: Locale;
-  onAiResponseLanguageChange: (locale: Locale) => void;
   onExtractComplete: (result: ExtractResult) => void;
   onCreditsUpdate: (credits: number) => void;
   onUpgradeClick: () => void;
@@ -45,13 +41,11 @@ const MODES: {
 ];
 
 export default function ExtractorPanel({
-  uiLocale,
-  aiResponseLanguage,
-  onAiResponseLanguageChange,
   onExtractComplete,
   onCreditsUpdate,
   onUpgradeClick,
 }: ExtractorPanelProps) {
+  const { aiResponseLanguage, setAiResponseLanguage, t } = useLocale();
   const [input, setInput] = useState("");
   const [mode, setMode] = useState<ExtractionMode>("both");
   const [loading, setLoading] = useState(false);
@@ -82,10 +76,10 @@ export default function ExtractorPanel({
 
       if (!res.success) {
         if (res.error === "insufficient_credits") {
-          setError(t(uiLocale, "errorInsufficientCredits"));
+          setError(t("errorInsufficientCredits"));
           onUpgradeClick();
         } else {
-          setError(res.error ?? t(uiLocale, "errorGeneric"));
+          setError(res.error ?? t("errorGeneric"));
         }
         return;
       }
@@ -96,7 +90,7 @@ export default function ExtractorPanel({
         onCreditsUpdate(-res.creditsUsed);
       }
     } catch {
-      setError(t(uiLocale, "errorGeneric"));
+      setError(t("errorGeneric"));
     } finally {
       setLoading(false);
     }
@@ -106,10 +100,10 @@ export default function ExtractorPanel({
     <section className="card">
       <div className="mb-6">
         <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
-          {t(uiLocale, "extractorTitle")}
+          {t("extractorTitle")}
         </h2>
         <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
-          {t(uiLocale, "extractorDesc")}
+          {t("extractorDesc")}
         </p>
       </div>
 
@@ -118,7 +112,7 @@ export default function ExtractorPanel({
           <textarea
             value={input}
             onChange={(e) => setInput(e.target.value)}
-            placeholder={t(uiLocale, "inputPlaceholder")}
+            placeholder={t("inputPlaceholder")}
             rows={5}
             className="input-field resize-none pr-16"
           />
@@ -127,7 +121,7 @@ export default function ExtractorPanel({
               icon={isUrl ? faLink : faAlignLeft}
               className="h-3 w-3"
             />
-            {isUrl ? t(uiLocale, "url") : t(uiLocale, "text")}
+            {isUrl ? t("url") : t("text")}
           </div>
         </div>
 
@@ -135,17 +129,17 @@ export default function ExtractorPanel({
           <div>
             <LanguageSelector
               locale={aiResponseLanguage}
-              onChange={onAiResponseLanguageChange}
+              onChange={setAiResponseLanguage}
               variant="ai"
             />
             <p className="mt-1 text-xs text-gray-400 dark:text-gray-500">
-              {t(uiLocale, "aiResponseLanguageHint")}
+              {t("aiResponseLanguageHint")}
             </p>
           </div>
 
           <div>
             <label className="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-300">
-              {t(uiLocale, "extractionMode")}
+              {t("extractionMode")}
             </label>
             <div className="flex gap-2">
               {MODES.map(({ value, labelKey, icon: Icon }) => (
@@ -160,7 +154,7 @@ export default function ExtractorPanel({
                   }`}
                 >
                   <Icon className="h-3.5 w-3.5" />
-                  {t(uiLocale, labelKey)}
+                  {t(labelKey)}
                 </button>
               ))}
             </div>
@@ -175,12 +169,12 @@ export default function ExtractorPanel({
           {loading ? (
             <>
               <Loader2 className="h-4 w-4 animate-spin" />
-              {t(uiLocale, "extracting")}
+              {t("extracting")}
             </>
           ) : (
             <>
               <Sparkles className="h-4 w-4" />
-              {t(uiLocale, "extract")}
+              {t("extract")}
             </>
           )}
         </button>
@@ -197,7 +191,7 @@ export default function ExtractorPanel({
               <div>
                 <h3 className="mb-2 flex items-center gap-2 text-sm font-semibold text-gray-900 dark:text-white">
                   <FileText className="h-4 w-4 text-nectar-500" />
-                  {t(uiLocale, "summary")}
+                  {t("summary")}
                 </h3>
                 <p className="rounded-lg bg-gray-50 p-3 text-sm text-gray-700 dark:bg-gray-800 dark:text-gray-300">
                   {result.summary}
@@ -206,15 +200,15 @@ export default function ExtractorPanel({
             )}
 
             {result.keyInfo && result.keyInfo.length > 0 && (
-              <KeyInfoDisplay items={result.keyInfo} uiLocale={uiLocale} />
+              <KeyInfoDisplay items={result.keyInfo} />
             )}
 
             {result.alignment && result.alignment.length > 0 && (
-              <AlignmentDisplay pairs={result.alignment} uiLocale={uiLocale} />
+              <AlignmentDisplay pairs={result.alignment} />
             )}
 
             <p className="text-xs text-green-600 dark:text-green-400">
-              ✓ {t(uiLocale, "saved")}
+              ✓ {t("saved")}
             </p>
           </div>
         )}
@@ -223,18 +217,14 @@ export default function ExtractorPanel({
   );
 }
 
-function KeyInfoDisplay({
-  items,
-  uiLocale,
-}: {
-  items: KeyInfoItem[];
-  uiLocale: Locale;
-}) {
+function KeyInfoDisplay({ items }: { items: KeyInfoItem[] }) {
+  const { t } = useLocale();
+
   return (
     <div>
       <h3 className="mb-2 flex items-center gap-2 text-sm font-semibold text-gray-900 dark:text-white">
         <KeyRound className="h-4 w-4 text-nectar-500" />
-        {t(uiLocale, "keyInfo")}
+        {t("keyInfo")}
       </h3>
       <div className="grid gap-2 sm:grid-cols-2">
         {items.map((item, i) => (
@@ -255,18 +245,14 @@ function KeyInfoDisplay({
   );
 }
 
-function AlignmentDisplay({
-  pairs,
-  uiLocale,
-}: {
-  pairs: AlignmentPair[];
-  uiLocale: Locale;
-}) {
+function AlignmentDisplay({ pairs }: { pairs: AlignmentPair[] }) {
+  const { t } = useLocale();
+
   return (
     <div>
       <h3 className="mb-2 flex items-center gap-2 text-sm font-semibold text-gray-900 dark:text-white">
         <ArrowRightLeft className="h-4 w-4 text-nectar-500" />
-        {t(uiLocale, "dualAlignment")}
+        {t("dualAlignment")}
       </h3>
       <div className="space-y-2">
         {pairs.map((pair, i) => (

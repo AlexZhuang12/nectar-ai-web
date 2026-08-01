@@ -1,7 +1,8 @@
 "use client";
 
-import { t } from "@/lib/i18n";
-import type { KnowledgeRecord, Locale } from "@/lib/types";
+import { getHistory } from "@/app/actions/extract";
+import { useLocale } from "@/context/LocaleContext";
+import type { KnowledgeRecord } from "@/lib/types";
 import { faLink } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
@@ -13,17 +14,15 @@ import {
   RefreshCw,
 } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
-import { getHistory } from "@/app/actions/extract";
 
 interface KnowledgeHistoryProps {
-  locale: Locale;
   refreshKey?: number;
 }
 
 export default function KnowledgeHistory({
-  locale,
   refreshKey = 0,
 }: KnowledgeHistoryProps) {
+  const { t } = useLocale();
   const [records, setRecords] = useState<KnowledgeRecord[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -48,13 +47,13 @@ export default function KnowledgeHistory({
       <div className="mb-4 flex items-center justify-between">
         <h2 className="flex items-center gap-2 text-lg font-semibold text-gray-900 dark:text-white">
           <History className="h-5 w-5 text-nectar-500" />
-          {t(locale, "historyTitle")}
+          {t("historyTitle")}
         </h2>
         <button
           onClick={loadHistory}
           disabled={loading}
           className="rounded-lg p-2 text-gray-400 transition hover:bg-gray-100 hover:text-gray-600 dark:hover:bg-gray-800"
-          aria-label="Refresh"
+          aria-label={t("refresh")}
         >
           <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} />
         </button>
@@ -63,16 +62,16 @@ export default function KnowledgeHistory({
       {loading && records.length === 0 ? (
         <div className="flex items-center justify-center py-12 text-sm text-gray-400">
           <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
-          Loading…
+          {t("loading")}
         </div>
       ) : records.length === 0 ? (
         <div className="py-12 text-center text-sm text-gray-400">
-          {t(locale, "historyEmpty")}
+          {t("historyEmpty")}
         </div>
       ) : (
         <div className="space-y-3">
           {records.map((record) => (
-            <HistoryItem key={record.id} record={record} locale={locale} />
+            <HistoryItem key={record.id} record={record} />
           ))}
         </div>
       )}
@@ -80,14 +79,9 @@ export default function KnowledgeHistory({
   );
 }
 
-function HistoryItem({
-  record,
-  locale,
-}: {
-  record: KnowledgeRecord;
-  locale: Locale;
-}) {
-  const date = new Date(record.created_at).toLocaleString(locale);
+function HistoryItem({ record }: { record: KnowledgeRecord }) {
+  const { uiLocale, t } = useLocale();
+  const date = new Date(record.created_at).toLocaleString(uiLocale);
 
   return (
     <article className="rounded-lg border border-gray-200 p-4 transition hover:border-nectar-200 hover:shadow-sm dark:border-gray-700 dark:hover:border-nectar-800">
@@ -98,7 +92,7 @@ function HistoryItem({
           ) : (
             <FileText className="h-3 w-3" />
           )}
-          {record.input_type.toUpperCase()}
+          {record.input_type === "url" ? t("url") : t("text")}
         </span>
         <span>•</span>
         <span>{record.target_language}</span>
@@ -123,13 +117,13 @@ function HistoryItem({
         {record.key_info && record.key_info.length > 0 && (
           <span className="inline-flex items-center gap-1 rounded-full bg-blue-50 px-2 py-0.5 text-xs text-blue-700 dark:bg-blue-950 dark:text-blue-300">
             <KeyRound className="h-3 w-3" />
-            {record.key_info.length} keys
+            {record.key_info.length} {t("keysCount")}
           </span>
         )}
         {record.alignment && record.alignment.length > 0 && (
           <span className="inline-flex items-center gap-1 rounded-full bg-purple-50 px-2 py-0.5 text-xs text-purple-700 dark:bg-purple-950 dark:text-purple-300">
             <ArrowRightLeft className="h-3 w-3" />
-            {record.alignment.length} pairs
+            {record.alignment.length} {t("pairsCount")}
           </span>
         )}
       </div>
