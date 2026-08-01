@@ -3,6 +3,7 @@
 import { t as translate, normalizeLocale } from "@/lib/i18n";
 import type { TranslationKeys } from "@/lib/i18n";
 import type { Locale } from "@/lib/types";
+import { useRouter } from "next/navigation";
 import {
   createContext,
   useCallback,
@@ -48,6 +49,7 @@ export interface LocaleContextValue {
 export const LocaleContext = createContext<LocaleContextValue | null>(null);
 
 export function LocaleProvider({ children }: { children: ReactNode }) {
+  const router = useRouter();
   const [uiLocale, setUiLocaleState] = useState<Locale>(DEFAULT_UI_LOCALE);
   const [aiResponseLanguage, setAiResponseLanguageState] =
     useState<Locale>(DEFAULT_AI_LOCALE);
@@ -78,16 +80,22 @@ export function LocaleProvider({ children }: { children: ReactNode }) {
     console.log("[LocaleContext] currentLocale (AI):", aiResponseLanguage);
   }, [aiResponseLanguage, ready]);
 
-  const setUiLocale = useCallback((locale: Locale) => {
-    const normalized = normalizeLocale(locale);
-    if (!normalized) {
-      console.warn("[LocaleContext] Invalid UI locale rejected:", locale);
-      return;
-    }
-    console.log("[LocaleContext] setUiLocale →", normalized);
-    setUiLocaleState(normalized);
-    setLocaleRevision((n) => n + 1);
-  }, []);
+  const setUiLocale = useCallback(
+    (locale: Locale) => {
+      const normalized = normalizeLocale(locale);
+      if (!normalized) {
+        console.warn("[LocaleContext] Invalid UI locale rejected:", locale);
+        return;
+      }
+      console.log("[LocaleContext] setUiLocale →", normalized);
+      setUiLocaleState(normalized);
+      setLocaleRevision((n) => n + 1);
+      document.documentElement.lang = normalized;
+      writeStoredLocale(UI_LOCALE_KEY, normalized);
+      router.refresh();
+    },
+    [router]
+  );
 
   const setAiResponseLanguage = useCallback((locale: Locale) => {
     const normalized = normalizeLocale(locale);
@@ -118,7 +126,23 @@ export function LocaleProvider({ children }: { children: ReactNode }) {
   );
 
   return (
-    <LocaleContext.Provider value={value}>{children}</LocaleContext.Provider>
+    <LocaleContext.Provider value={value}>
+      <div
+        key={`locale-provider-${uiLocale}-${localeRevision}`}
+        data-current-locale={uiLocale}
+        data-locale-revision={localeRevision}
+      >
+        {children}
+      </div>
+    </LocaleContext.Provider>
+  );
+}
+
+/** Forces full subtree remount when UI locale changes (use inside LocaleProvider). */
+export function LocaleRemountBoundary({ children }: { children: ReactNode }) {
+  const { uiLocale, localeRevision } = useLocale();
+  return (
+    <div key={`locale-boundary-${uiLocale}-${localeRevision}`}>{children}</div>
   );
 }
 
@@ -132,6 +156,10 @@ export function useLocale(): LocaleContextValue {
 
 /** Primary hook for translated UI strings — re-renders when uiLocale changes */
 export function useTranslation() {
-  const { uiLocale, localeRevision, t } = useLocale();
+  const { uiLocale, localeRevision } = useLocale();
+  const t = useCallback(
+    (key: TranslationKeys) => translate(uiLocale, key),
+    [uiLocale, localeRevision]
+  );
   return { uiLocale, localeRevision, t };
 }

@@ -318,9 +318,14 @@ const translations: Record<Locale, Record<TranslationKeys, string>> = {
   },
 };
 
+/**
+ * Stateless translation lookup — reads `translations[locale][key]` on every call.
+ * No memoization or cache; always uses the locale argument passed at call time.
+ */
 export function t(locale: Locale, key: TranslationKeys): string {
   const normalized = normalizeLocale(locale) ?? "en-US";
-  const value = translations[normalized]?.[key];
+  const dictionary = translations[normalized];
+  const value = dictionary?.[key];
   const result =
     value ?? translations["en-US"][key] ?? translations["zh-TW"][key] ?? key;
   console.log(
