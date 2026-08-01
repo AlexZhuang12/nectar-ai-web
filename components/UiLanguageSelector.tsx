@@ -1,5 +1,6 @@
 "use client";
 
+import { isCanonicalLocale, normalizeLocale } from "@/lib/i18n";
 import type { Locale } from "@/lib/types";
 import { useLocale } from "@/context/LocaleContext";
 import { Globe } from "lucide-react";
@@ -16,16 +17,23 @@ const UI_LANGUAGE_OPTIONS: {
   { value: "es-ES", label: "Español", flag: "🇪🇸" },
 ];
 
-/** UI language selector — ONLY calls setUiLocale. Used in Header. */
+/** UI language selector — ONLY user action writes nectar-ui-locale */
 export default function UiLanguageSelector() {
   const { setUiLocale, uiLocale, t } = useLocale();
 
   function handleChange(raw: string) {
-    console.log("UI Language Changed To:", raw);
-    setUiLocale(raw as Locale);
-    // 強制將新的語系寫入 localStorage 並刷新頁面，完全杜絕 React/Next.js 的 Context 快取死鎖
-    localStorage.setItem("nectar-ui-locale", raw);
-    window.location.reload();
+    const locale: Locale | null = isCanonicalLocale(raw)
+      ? raw
+      : normalizeLocale(raw);
+
+    if (!locale) {
+      console.warn("[UiLanguageSelector] Invalid selection:", raw);
+      return;
+    }
+
+    console.log("UI Language Changed To:", locale);
+    // setUiLocale is the sole writer + reload (no mount-time overwrites elsewhere)
+    setUiLocale(locale);
   }
 
   return (
