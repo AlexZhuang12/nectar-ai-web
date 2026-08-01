@@ -181,31 +181,34 @@ const translationStore: Record<Locale, Record<TranslationKeys, string>> = {
   },
   "en-US": {
     appTitle: "Nectar AI",
-    appSubtitle: "Global Web Workspace",
+    appSubtitle: "Bilingual Knowledge Extractor",
     uiLanguage: "UI Language",
-    aiResponseLanguage: "AI Response Language",
-    aiResponseLanguageHint: "AI output uses this language, independent of UI language",
-    creditBalance: "Credit Balance",
+    aiResponseLanguage: "AI Output Language",
+    aiResponseLanguageHint:
+      "Language used by AI to generate final response",
+    creditBalance: "Credits",
     credits: "credits",
     upgradePro: "Upgrade Pro",
     feedback: "Feedback",
-    extractorTitle: "Key Information & Dual-Language Alignment Extractor",
-    extractorDesc: "Paste text or a URL to extract key info and generate bilingual alignment",
-    inputPlaceholder: "Paste text content or enter a URL…",
+    extractorTitle: "Key Info & Dual Alignment Extractor",
+    extractorDesc:
+      "Paste text or URL to extract key insights and aligned translation",
+    inputPlaceholder: "Paste article, report text, or enter URL...",
     targetLanguage: "Target Language",
     extractionMode: "Extraction Mode",
     modeKeyInfo: "Key Info",
-    modeDualAlignment: "Dual Alignment",
-    modeBoth: "Both",
-    extract: "Extract",
-    extracting: "Extracting…",
+    modeDualAlignment: "Bilingual Alignment",
+    modeBoth: "Both Modes",
+    extract: "Start Extraction",
+    extracting: "Extracting...",
     keyInfo: "Key Information",
-    dualAlignment: "Dual-Language Alignment",
+    dualAlignment: "Bilingual Alignment",
     summary: "Summary",
-    historyTitle: "Saved Knowledge History",
-    historyEmpty: "No records yet. Start your first extraction!",
+    historyTitle: "Knowledge History",
+    historyEmpty: "No extraction history yet",
     proModalTitle: "Upgrade to Nectar AI Pro",
-    proModalDesc: "Unlock unlimited extractions, priority processing, and advanced alignment",
+    proModalDesc:
+      "Unlock unlimited extractions, priority processing, and advanced alignment",
     proFeature1: "Unlimited extractions",
     proFeature2: "Priority AI processing",
     proFeature3: "Advanced dual-language alignment",
@@ -213,9 +216,9 @@ const translationStore: Record<Locale, Record<TranslationKeys, string>> = {
     checkout: "Proceed to Checkout",
     checkoutSimulated: "Stripe checkout simulated successfully!",
     close: "Close",
-    errorInsufficientCredits: "Insufficient credits. Please upgrade to Pro",
-    errorGeneric: "Extraction failed. Please try again",
-    saved: "Saved to knowledge base",
+    errorInsufficientCredits: "Insufficient credits, please upgrade Pro",
+    errorGeneric: "An error occurred, please try again",
+    saved: "Saved to history",
     text: "Text",
     url: "URL",
     feedbackTitle: "Send Feedback",
@@ -239,29 +242,30 @@ const translationStore: Record<Locale, Record<TranslationKeys, string>> = {
   },
   "ja-JP": {
     appTitle: "Nectar AI",
-    appSubtitle: "グローバルワークスペース",
+    appSubtitle: "バイリンガル知識抽出ツール",
     uiLanguage: "UI 言語",
     aiResponseLanguage: "AI 出力言語",
-    aiResponseLanguageHint: "AI の回答はこの言語で出力されます（UI 言語とは独立）",
-    creditBalance: "クレジット残高",
+    aiResponseLanguageHint: "AI が最終回答を生成する言語",
+    creditBalance: "クレジット",
     credits: "クレジット",
     upgradePro: "Pro にアップグレード",
     feedback: "フィードバック",
     extractorTitle: "重要情報・二言語アライメント抽出",
-    extractorDesc: "テキストまたは URL を貼り付けて、重要情報の抽出と二言語アライメントを生成",
-    inputPlaceholder: "テキストまたは URL を入力…",
+    extractorDesc:
+      "テキストまたは URL を貼り付け、重要情報と対訳を抽出します",
+    inputPlaceholder: "記事・レポートのテキスト、または URL を入力...",
     targetLanguage: "対象言語",
     extractionMode: "抽出モード",
     modeKeyInfo: "重要情報",
     modeDualAlignment: "二言語アライメント",
     modeBoth: "両方",
     extract: "抽出開始",
-    extracting: "抽出中…",
+    extracting: "抽出中...",
     keyInfo: "重要情報",
     dualAlignment: "二言語アライメント",
     summary: "要約",
-    historyTitle: "保存済みナレッジ履歴",
-    historyEmpty: "履歴がありません。最初の抽出を始めましょう！",
+    historyTitle: "ナレッジ履歴",
+    historyEmpty: "抽出履歴はまだありません",
     proModalTitle: "Nectar AI Pro にアップグレード",
     proModalDesc: "無制限抽出、優先処理、高度なアライメント機能を解放",
     proFeature1: "無制限抽出",
@@ -360,19 +364,34 @@ export function getDictionary(
   locale: Locale | string
 ): Record<TranslationKeys, string> {
   const norm = normalizeLocale(locale) ?? "zh-TW";
-  return translationStore[norm] ?? translationStore["en-US"];
+  const dict = translationStore[norm];
+  if (!dict) {
+    console.warn(`[i18n] getDictionary: unknown locale "${locale}" → en-US`);
+    return translationStore["en-US"];
+  }
+  return dict;
 }
 
-/** Direct locale-key lookup on every call */
+/** Direct locale-key lookup — never falls back to zh-TW for non-Chinese locales */
 export function t(locale: Locale | string, key: TranslationKeys): string {
   const norm = normalizeLocale(locale) ?? "zh-TW";
-  const dict = translationStore[norm] || translationStore["en-US"];
+  const dict = translationStore[norm];
+
+  if (!dict) {
+    console.warn(`[i18n] t(): unknown locale "${locale}" (norm=${norm})`);
+    return translationStore["en-US"][key] ?? key;
+  }
+
   const value = dict[key];
-  if (value === undefined) {
-    console.warn(`Missing key: ${key} for locale: ${norm}`);
+  if (value !== undefined) {
+    return value;
+  }
+
+  console.warn(`[i18n] Missing key: ${key} for locale: ${norm}`);
+  if (norm === "zh-TW") {
     return translationStore["zh-TW"][key] ?? key;
   }
-  return value;
+  return translationStore["en-US"][key] ?? key;
 }
 
 /** @deprecated Use t(locale, key) directly */
