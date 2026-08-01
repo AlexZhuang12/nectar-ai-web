@@ -1,7 +1,6 @@
 "use client";
 
-import { LOCALES } from "@/lib/i18n";
-import type { Locale } from "@/lib/types";
+import { normalizeLocale, LOCALES } from "@/lib/i18n";
 import { useLocale } from "@/context/LocaleContext";
 import { Languages } from "lucide-react";
 
@@ -11,13 +10,9 @@ export default function AiLanguageSelector() {
     useLocale();
 
   function handleChange(next: string) {
-    const locale = next as Locale;
-    console.log(
-      "[AiLanguageSelector] onChange → setAiResponseLanguage:",
-      locale,
-      "(UI stays:",
-      uiLocale + ")"
-    );
+    const locale = normalizeLocale(next);
+    if (!locale) return;
+    console.log("[AiLanguageSelector] AI Language Changed To:", locale);
     setAiResponseLanguage(locale);
   }
 

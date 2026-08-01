@@ -1,7 +1,6 @@
 "use client";
 
-import { LOCALES } from "@/lib/i18n";
-import type { Locale } from "@/lib/types";
+import { normalizeLocale, LOCALES } from "@/lib/i18n";
 import { useLocale } from "@/context/LocaleContext";
 import { Globe } from "lucide-react";
 
@@ -10,9 +9,13 @@ export default function UiLanguageSelector() {
   const { uiLocale, setUiLocale, t } = useLocale();
 
   function handleChange(next: string) {
-    const locale = next as Locale;
-    console.log("[UiLanguageSelector] onChange → setUiLocale:", locale);
-    setUiLocale(locale);
+    const newLang = normalizeLocale(next);
+    if (!newLang) {
+      console.warn("[UiLanguageSelector] Invalid selection:", next);
+      return;
+    }
+    console.log("UI Language Changed To:", newLang);
+    setUiLocale(newLang);
   }
 
   return (

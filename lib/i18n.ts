@@ -1,5 +1,23 @@
 import type { Locale } from "./types";
 
+const VALID_LOCALES: Locale[] = ["zh-TW", "en-US", "ja-JP", "es-ES"];
+
+/** Map legacy/shorthand codes to canonical locale keys */
+const LOCALE_ALIASES: Record<string, Locale> = {
+  en: "en-US",
+  zh: "zh-TW",
+  ja: "ja-JP",
+  es: "es-ES",
+};
+
+export function normalizeLocale(value: string | null | undefined): Locale | null {
+  if (!value) return null;
+  const trimmed = value.trim();
+  if (VALID_LOCALES.includes(trimmed as Locale)) return trimmed as Locale;
+  if (trimmed in LOCALE_ALIASES) return LOCALE_ALIASES[trimmed];
+  return null;
+}
+
 export const LOCALES: { value: Locale; label: string; flag: string }[] = [
   { value: "zh-TW", label: "繁體中文", flag: "🇹🇼" },
   { value: "en-US", label: "English", flag: "🇺🇸" },
@@ -301,12 +319,22 @@ const translations: Record<Locale, Record<TranslationKeys, string>> = {
 };
 
 export function t(locale: Locale, key: TranslationKeys): string {
-  const value = translations[locale]?.[key];
+  const normalized = normalizeLocale(locale) ?? "en-US";
+  const value = translations[normalized]?.[key];
+  const result =
+    value ?? translations["en-US"][key] ?? translations["zh-TW"][key] ?? key;
+  console.log(
+    "[i18n] Current Locale:",
+    normalized,
+    "Key:",
+    key,
+    "Result:",
+    result
+  );
   if (value === undefined) {
-    console.warn(`[i18n] Missing translation: locale=${locale}, key=${key}`);
-    return translations["en-US"][key] ?? key;
+    console.warn(`[i18n] Missing translation: locale=${normalized}, key=${key}`);
   }
-  return value;
+  return result;
 }
 
 /** Dev helper: verify all locales have identical key sets */
@@ -324,8 +352,6 @@ export function validateTranslations(): boolean {
   }
   return ok;
 }
-
-const VALID_LOCALES: Locale[] = ["zh-TW", "en-US", "ja-JP", "es-ES"];
 
 export function getLocaleLabel(locale: Locale): string {
   return LOCALES.find((l) => l.value === locale)?.label ?? locale;

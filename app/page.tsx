@@ -6,12 +6,11 @@ import FeedbackModal from "@/components/FeedbackModal";
 import Header from "@/components/Header";
 import KnowledgeHistory from "@/components/KnowledgeHistory";
 import ProUpgradeModal from "@/components/ProUpgradeModal";
-import Providers from "@/components/Providers";
 import { useLocale } from "@/context/LocaleContext";
 import type { ExtractResult } from "@/lib/types";
 import { useCallback, useEffect, useState } from "react";
 
-function Dashboard() {
+export default function DashboardPage() {
   const { uiLocale } = useLocale();
   const [credits, setCredits] = useState(100);
   const [showProModal, setShowProModal] = useState(false);
@@ -61,13 +60,5 @@ function Dashboard() {
         onClose={() => setShowFeedbackModal(false)}
       />
     </div>
-  );
-}
-
-export default function Page() {
-  return (
-    <Providers>
-      <Dashboard />
-    </Providers>
   );
 }
