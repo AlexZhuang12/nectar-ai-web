@@ -2,7 +2,7 @@
 
 import { extractInformation } from "@/app/actions/extract";
 import AiLanguageSelector from "@/components/AiLanguageSelector";
-import { useLocale } from "@/context/LocaleContext";
+import { useLocale, useTranslation } from "@/context/LocaleContext";
 import type {
   AlignmentPair,
   ExtractionMode,
@@ -45,7 +45,8 @@ export default function ExtractorPanel({
   onCreditsUpdate,
   onUpgradeClick,
 }: ExtractorPanelProps) {
-  const { uiLocale, t, aiResponseLanguage } = useLocale();
+  const { aiResponseLanguage } = useLocale();
+  const { uiLocale, localeRevision, t } = useTranslation();
   const [input, setInput] = useState("");
   const [mode, setMode] = useState<ExtractionMode>("both");
   const [loading, setLoading] = useState(false);
@@ -101,7 +102,11 @@ export default function ExtractorPanel({
   }
 
   return (
-    <section data-ui-locale={uiLocale} className="card">
+    <section
+      data-ui-locale={uiLocale}
+      data-locale-revision={localeRevision}
+      className="card"
+    >
       <div className="mb-6">
         <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
           {t("extractorTitle")}
@@ -218,7 +223,7 @@ export default function ExtractorPanel({
 }
 
 function KeyInfoDisplay({ items }: { items: KeyInfoItem[] }) {
-  const { t } = useLocale();
+  const { t } = useTranslation();
 
   return (
     <div>
@@ -246,7 +251,7 @@ function KeyInfoDisplay({ items }: { items: KeyInfoItem[] }) {
 }
 
 function AlignmentDisplay({ pairs }: { pairs: AlignmentPair[] }) {
-  const { t } = useLocale();
+  const { t } = useTranslation();
 
   return (
     <div>

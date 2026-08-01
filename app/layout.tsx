@@ -19,6 +19,9 @@ export const metadata: Metadata = {
     "Key Information & Dual-Language Alignment Extractor powered by AI",
 };
 
+/** Avoid static HTML snapshot that can mask client-side locale switching */
+export const dynamic = "force-dynamic";
+
 export default function RootLayout({
   children,
 }: Readonly<{

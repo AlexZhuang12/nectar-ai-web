@@ -1,7 +1,7 @@
 "use client";
 
 import { submitFeedback } from "@/app/actions/feedback";
-import { useLocale } from "@/context/LocaleContext";
+import { useTranslation } from "@/context/LocaleContext";
 import type { FeedbackCategory } from "@/lib/types";
 import { faCheck } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
@@ -27,7 +27,7 @@ const CATEGORIES: {
 ];
 
 export default function FeedbackModal({ isOpen, onClose }: FeedbackModalProps) {
-  const { uiLocale, t } = useLocale();
+  const { uiLocale, localeRevision, t } = useTranslation();
   const [category, setCategory] = useState<FeedbackCategory>("feature");
   const [message, setMessage] = useState("");
   const [submitting, setSubmitting] = useState(false);
@@ -73,6 +73,7 @@ export default function FeedbackModal({ isOpen, onClose }: FeedbackModalProps) {
     <div
       className="fixed inset-0 z-50 flex items-center justify-center p-4"
       data-ui-locale={uiLocale}
+      data-locale-revision={localeRevision}
     >
       <div
         className="absolute inset-0 bg-black/50 backdrop-blur-sm"

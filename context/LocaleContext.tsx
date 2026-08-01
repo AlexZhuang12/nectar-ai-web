@@ -99,18 +99,13 @@ export function LocaleProvider({ children }: { children: ReactNode }) {
     setAiResponseLanguageState(normalized);
   }, []);
 
-  const t = useCallback(
-    (key: TranslationKeys) => translate(uiLocale, key),
-    [uiLocale]
-  );
-
   const value = useMemo<LocaleContextValue>(
     () => ({
       uiLocale,
       setUiLocale,
       aiResponseLanguage,
       setAiResponseLanguage,
-      t,
+      t: (key: TranslationKeys) => translate(uiLocale, key),
       localeRevision,
     }),
     [
@@ -118,16 +113,12 @@ export function LocaleProvider({ children }: { children: ReactNode }) {
       setUiLocale,
       aiResponseLanguage,
       setAiResponseLanguage,
-      t,
       localeRevision,
     ]
   );
 
   return (
-    <LocaleContext.Provider value={value}>
-      {/* Force full subtree re-render when UI locale changes */}
-      <div key={`locale-root-${uiLocale}-${localeRevision}`}>{children}</div>
-    </LocaleContext.Provider>
+    <LocaleContext.Provider value={value}>{children}</LocaleContext.Provider>
   );
 }
 
@@ -137,4 +128,10 @@ export function useLocale(): LocaleContextValue {
     throw new Error("useLocale must be used within LocaleProvider");
   }
   return ctx;
+}
+
+/** Primary hook for translated UI strings — re-renders when uiLocale changes */
+export function useTranslation() {
+  const { uiLocale, localeRevision, t } = useLocale();
+  return { uiLocale, localeRevision, t };
 }

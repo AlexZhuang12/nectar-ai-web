@@ -1,7 +1,7 @@
 "use client";
 
 import UiLanguageSelector from "@/components/UiLanguageSelector";
-import { useLocale } from "@/context/LocaleContext";
+import { useTranslation } from "@/context/LocaleContext";
 import { faCrown } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { Coins, MessageSquare, Sparkles } from "lucide-react";
@@ -17,11 +17,12 @@ export default function Header({
   onUpgradeClick,
   onFeedbackClick,
 }: HeaderProps) {
-  const { uiLocale, t } = useLocale();
+  const { uiLocale, localeRevision, t } = useTranslation();
 
   return (
     <header
       data-ui-locale={uiLocale}
+      data-locale-revision={localeRevision}
       className="sticky top-0 z-40 border-b border-gray-200 bg-white/80 backdrop-blur-md dark:border-gray-800 dark:bg-gray-950/80"
     >
       <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-4 sm:px-6">

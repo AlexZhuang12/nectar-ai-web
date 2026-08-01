@@ -1,13 +1,13 @@
 "use client";
 
 import { normalizeLocale, LOCALES } from "@/lib/i18n";
-import { useLocale } from "@/context/LocaleContext";
+import { useLocale, useTranslation } from "@/context/LocaleContext";
 import { Languages } from "lucide-react";
 
 /** AI language selector — ONLY calls setAiResponseLanguage. Used in ExtractorPanel. */
 export default function AiLanguageSelector() {
-  const { uiLocale, aiResponseLanguage, setAiResponseLanguage, t } =
-    useLocale();
+  const { aiResponseLanguage, setAiResponseLanguage } = useLocale();
+  const { uiLocale, localeRevision, t } = useTranslation();
 
   function handleChange(next: string) {
     const locale = normalizeLocale(next);
@@ -22,6 +22,7 @@ export default function AiLanguageSelector() {
       data-selector="ai-language"
       data-value={aiResponseLanguage}
       data-ui-locale={uiLocale}
+      data-locale-revision={localeRevision}
     >
       <label
         htmlFor="ai-language-select"

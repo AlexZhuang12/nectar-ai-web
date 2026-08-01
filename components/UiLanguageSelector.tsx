@@ -1,12 +1,13 @@
 "use client";
 
 import { normalizeLocale, LOCALES } from "@/lib/i18n";
-import { useLocale } from "@/context/LocaleContext";
+import { useLocale, useTranslation } from "@/context/LocaleContext";
 import { Globe } from "lucide-react";
 
 /** UI language selector — ONLY calls setUiLocale. Used in Header. */
 export default function UiLanguageSelector() {
-  const { uiLocale, setUiLocale, t } = useLocale();
+  const { setUiLocale } = useLocale();
+  const { uiLocale, localeRevision, t } = useTranslation();
 
   function handleChange(next: string) {
     const newLang = normalizeLocale(next);
@@ -23,6 +24,7 @@ export default function UiLanguageSelector() {
       className="relative inline-flex flex-col gap-1"
       data-selector="ui-language"
       data-value={uiLocale}
+      data-locale-revision={localeRevision}
     >
       <label
         htmlFor="ui-language-select"
