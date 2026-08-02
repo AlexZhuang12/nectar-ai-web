@@ -1,6 +1,7 @@
 "use client";
 
 import { createClient } from "@/lib/supabase/client";
+import { buildEmailRedirectUrl, sanitizeRedirectPath } from "@/lib/auth-redirect";
 import { Sparkles } from "lucide-react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
@@ -11,7 +12,7 @@ type AuthMode = "signin" | "signup";
 export default function AuthForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const redirectTo = searchParams.get("redirect") ?? "/dashboard";
+  const redirectTo = sanitizeRedirectPath(searchParams.get("redirect"));
   const callbackError = searchParams.get("error");
 
   const [mode, setMode] = useState<AuthMode>("signin");
@@ -35,11 +36,20 @@ export default function AuthForm() {
 
     try {
       if (mode === "signup") {
+        const emailRedirectTo = buildEmailRedirectUrl(redirectTo);
+
+        if (!emailRedirectTo) {
+          setError(
+            "Cannot build confirmation URL. Set NEXT_PUBLIC_APP_URL or open this page from your deployed site."
+          );
+          return;
+        }
+
         const { data, error: signUpError } = await supabase.auth.signUp({
           email,
           password,
           options: {
-            emailRedirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(redirectTo)}`,
+            emailRedirectTo,
           },
         });
 
@@ -55,7 +65,7 @@ export default function AuthForm() {
         }
 
         setMessage(
-          "Registration successful. Check your email to confirm your account, then sign in."
+          "Registration successful! Please check your email and click the confirmation link, then sign in."
         );
         setMode("signin");
         return;
