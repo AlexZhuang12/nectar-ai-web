@@ -1,10 +1,7 @@
 "use client";
 
 import { createClient } from "@/lib/supabase/client";
-import {
-  mapAuthErrorToZh,
-  sanitizeRedirectPath,
-} from "@/lib/auth-redirect";
+import { sanitizeRedirectPath } from "@/lib/auth-redirect";
 import { Sparkles } from "lucide-react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
@@ -22,18 +19,21 @@ export default function AuthForm() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
-  const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(
     callbackError === "auth_callback_failed"
-      ? "登入驗證失敗，請重新註冊或登入。"
+      ? "Authentication callback failed."
       : null
   );
+
+  async function goToWorkspace() {
+    router.push("/workspace");
+    router.refresh();
+  }
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setLoading(true);
     setError(null);
-    setMessage(null);
 
     const supabase = createClient();
 
@@ -45,22 +45,28 @@ export default function AuthForm() {
         });
 
         if (signUpError) {
-          setError(mapAuthErrorToZh(signUpError.message));
+          console.error("SignUp Error:", signUpError);
+          setError(signUpError.message);
           return;
         }
-
-        const successMessage =
-          "帳號建立成功！請檢查信箱收取驗證信（或已自動登入）";
 
         if (data.session) {
-          setMessage(successMessage);
-          router.push(redirectTo);
-          router.refresh();
+          await goToWorkspace();
           return;
         }
 
-        setMessage(successMessage);
-        setMode("signin");
+        const { error: signInError } = await supabase.auth.signInWithPassword({
+          email,
+          password,
+        });
+
+        if (signInError) {
+          console.error("SignIn after SignUp Error:", signInError);
+          setError(signInError.message);
+          return;
+        }
+
+        await goToWorkspace();
         return;
       }
 
@@ -70,15 +76,16 @@ export default function AuthForm() {
       });
 
       if (signInError) {
-        setError(mapAuthErrorToZh(signInError.message));
+        console.error("SignIn Error:", signInError);
+        setError(signInError.message);
         return;
       }
 
       router.push(redirectTo);
       router.refresh();
     } catch (err) {
-      const raw = err instanceof Error ? err.message : "發生未知錯誤，請稍後再試。";
-      setError(mapAuthErrorToZh(raw));
+      console.error("Auth Error:", err);
+      setError(err instanceof Error ? err.message : String(err));
     } finally {
       setLoading(false);
     }
@@ -103,7 +110,6 @@ export default function AuthForm() {
             onClick={() => {
               setMode("signin");
               setError(null);
-              setMessage(null);
             }}
             className={`rounded-md px-3 py-2 text-sm font-medium transition ${
               mode === "signin"
@@ -118,7 +124,6 @@ export default function AuthForm() {
             onClick={() => {
               setMode("signup");
               setError(null);
-              setMessage(null);
             }}
             className={`rounded-md px-3 py-2 text-sm font-medium transition ${
               mode === "signup"
@@ -167,12 +172,6 @@ export default function AuthForm() {
           {error && (
             <p className="rounded-md bg-red-50 p-3 text-sm text-red-700 dark:bg-red-950/40 dark:text-red-300">
               {error}
-            </p>
-          )}
-
-          {message && (
-            <p className="rounded-md bg-green-50 p-3 text-sm text-green-700 dark:bg-green-950/40 dark:text-green-300">
-              {message}
             </p>
           )}
 
