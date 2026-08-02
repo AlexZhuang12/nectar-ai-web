@@ -6,26 +6,11 @@ export function sanitizeRedirectPath(path: string | null | undefined): string {
   return path;
 }
 
-/**
- * Production callback URL for Supabase signUp emailRedirectTo.
- * Must match Supabase Dashboard → Authentication → Redirect URLs whitelist.
- */
-export function getSignupCallbackUrl(): string {
-  let url =
-    process.env.NEXT_PUBLIC_SITE_URL ??
-    process.env.NEXT_PUBLIC_VERCEL_URL ??
-    "https://nectar-ai-web.vercel.app";
-
-  url = url.includes("http") ? url : `https://${url}`;
-  url = url.charAt(url.length - 1) === "/" ? url : `${url}/`;
-  return `${url}auth/callback`;
-}
-
 export function mapAuthErrorToZh(message: string): string {
   const lower = message.toLowerCase();
 
   if (lower.includes("invalid path specified")) {
-    return "電子郵件確認網址格式錯誤，請確認 Supabase Redirect URLs 已設定為 https://nectar-ai-web.vercel.app/auth/callback";
+    return "電子郵件確認網址格式錯誤，請確認 Supabase Site URL 與 Redirect URLs 設定正確。";
   }
   if (lower.includes("user already registered") || lower.includes("already been registered")) {
     return "此 Email 已註冊，請直接登入。";

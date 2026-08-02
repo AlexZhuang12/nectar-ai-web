@@ -2,7 +2,6 @@
 
 import { createClient } from "@/lib/supabase/client";
 import {
-  getSignupCallbackUrl,
   mapAuthErrorToZh,
   sanitizeRedirectPath,
 } from "@/lib/auth-redirect";
@@ -40,14 +39,9 @@ export default function AuthForm() {
 
     try {
       if (mode === "signup") {
-        const emailRedirectTo = getSignupCallbackUrl();
-
         const { data, error: signUpError } = await supabase.auth.signUp({
           email,
           password,
-          options: {
-            emailRedirectTo,
-          },
         });
 
         if (signUpError) {
@@ -55,13 +49,17 @@ export default function AuthForm() {
           return;
         }
 
+        const successMessage =
+          "帳號建立成功！請檢查信箱收取驗證信（或已自動登入）";
+
         if (data.session) {
+          setMessage(successMessage);
           router.push(redirectTo);
           router.refresh();
           return;
         }
 
-        setMessage("註冊成功！請至 Email 收取確認信，點擊連結後即可登入。");
+        setMessage(successMessage);
         setMode("signin");
         return;
       }
