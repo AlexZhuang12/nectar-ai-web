@@ -1,13 +1,12 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
+import { getSupabaseAnonKey, getSupabaseUrl } from "./config";
 
 const PROTECTED_PREFIXES = ["/dashboard", "/workspace", "/profile"];
 const AUTH_PATH = "/auth";
 
 function hasSupabaseEnv(): boolean {
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL?.trim();
-  const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY?.trim();
-  return Boolean(url && key);
+  return Boolean(getSupabaseUrl() && getSupabaseAnonKey());
 }
 
 function passThrough(request: NextRequest, reason?: string) {
@@ -25,8 +24,8 @@ export async function updateSession(request: NextRequest) {
     );
   }
 
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!.trim();
-  const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!.trim();
+  const supabaseUrl = getSupabaseUrl();
+  const supabaseAnonKey = getSupabaseAnonKey();
 
   let supabaseResponse = NextResponse.next({ request });
 
