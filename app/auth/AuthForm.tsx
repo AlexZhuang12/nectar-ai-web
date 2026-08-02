@@ -1,7 +1,11 @@
 "use client";
 
 import { createClient } from "@/lib/supabase/client";
-import { buildEmailRedirectUrl, sanitizeRedirectPath } from "@/lib/auth-redirect";
+import {
+  getSignupCallbackUrl,
+  mapAuthErrorToZh,
+  sanitizeRedirectPath,
+} from "@/lib/auth-redirect";
 import { Sparkles } from "lucide-react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
@@ -22,7 +26,7 @@ export default function AuthForm() {
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(
     callbackError === "auth_callback_failed"
-      ? "Authentication callback failed. Please try again."
+      ? "登入驗證失敗，請重新註冊或登入。"
       : null
   );
 
@@ -36,14 +40,7 @@ export default function AuthForm() {
 
     try {
       if (mode === "signup") {
-        const emailRedirectTo = buildEmailRedirectUrl(redirectTo);
-
-        if (!emailRedirectTo) {
-          setError(
-            "Cannot build confirmation URL. Set NEXT_PUBLIC_APP_URL or open this page from your deployed site."
-          );
-          return;
-        }
+        const emailRedirectTo = getSignupCallbackUrl();
 
         const { data, error: signUpError } = await supabase.auth.signUp({
           email,
@@ -54,7 +51,7 @@ export default function AuthForm() {
         });
 
         if (signUpError) {
-          setError(signUpError.message);
+          setError(mapAuthErrorToZh(signUpError.message));
           return;
         }
 
@@ -64,9 +61,7 @@ export default function AuthForm() {
           return;
         }
 
-        setMessage(
-          "Registration successful! Please check your email and click the confirmation link, then sign in."
-        );
+        setMessage("註冊成功！請至 Email 收取確認信，點擊連結後即可登入。");
         setMode("signin");
         return;
       }
@@ -77,14 +72,15 @@ export default function AuthForm() {
       });
 
       if (signInError) {
-        setError(signInError.message);
+        setError(mapAuthErrorToZh(signInError.message));
         return;
       }
 
       router.push(redirectTo);
       router.refresh();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "An unexpected error occurred");
+      const raw = err instanceof Error ? err.message : "發生未知錯誤，請稍後再試。";
+      setError(mapAuthErrorToZh(raw));
     } finally {
       setLoading(false);
     }

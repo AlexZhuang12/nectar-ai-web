@@ -6,18 +6,42 @@ export function sanitizeRedirectPath(path: string | null | undefined): string {
   return path;
 }
 
-/** Absolute callback URL for Supabase email confirmation */
-export function buildEmailRedirectUrl(postLoginPath?: string): string | null {
-  const origin =
-    typeof window !== "undefined" && window.location.origin
-      ? window.location.origin
-      : process.env.NEXT_PUBLIC_APP_URL?.replace(/\/$/, "") ?? "";
+/**
+ * Production callback URL for Supabase signUp emailRedirectTo.
+ * Must match Supabase Dashboard → Authentication → Redirect URLs whitelist.
+ */
+export function getSignupCallbackUrl(): string {
+  let url =
+    process.env.NEXT_PUBLIC_SITE_URL ??
+    process.env.NEXT_PUBLIC_VERCEL_URL ??
+    "https://nectar-ai-web.vercel.app";
 
-  if (!origin) {
-    return null;
+  url = url.includes("http") ? url : `https://${url}`;
+  url = url.charAt(url.length - 1) === "/" ? url : `${url}/`;
+  return `${url}auth/callback`;
+}
+
+export function mapAuthErrorToZh(message: string): string {
+  const lower = message.toLowerCase();
+
+  if (lower.includes("invalid path specified")) {
+    return "電子郵件確認網址格式錯誤，請確認 Supabase Redirect URLs 已設定為 https://nectar-ai-web.vercel.app/auth/callback";
+  }
+  if (lower.includes("user already registered") || lower.includes("already been registered")) {
+    return "此 Email 已註冊，請直接登入。";
+  }
+  if (lower.includes("invalid login credentials")) {
+    return "Email 或密碼錯誤，請重新輸入。";
+  }
+  if (lower.includes("email not confirmed")) {
+    return "Email 尚未驗證，請至信箱點擊確認連結後再登入。";
+  }
+  if (lower.includes("password") && lower.includes("least")) {
+    return "密碼長度不足，請至少輸入 6 個字元。";
+  }
+  if (lower.includes("rate limit") || lower.includes("too many requests")) {
+    return "操作過於頻繁，請稍後再試。";
   }
 
-  const url = new URL("/auth/callback", origin);
-  url.searchParams.set("next", sanitizeRedirectPath(postLoginPath));
-  return url.href;
+  return message;
 }
