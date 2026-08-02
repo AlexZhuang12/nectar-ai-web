@@ -58,3 +58,25 @@ export interface UserCredits {
   balance: number;
   isPro: boolean;
 }
+
+export interface UserProfile {
+  id: string;
+  full_name: string | null;
+  updated_at: string | null;
+}
+
+export type ChatMessageRole = "user" | "assistant";
+
+export interface ChatMessageRow {
+  id: string;
+  user_id: string;
+  role: ChatMessageRole;
+  content: string;
+  created_at: string;
+}
+
+export interface ChatDisplayMessage {
+  id: string;
+  role: ChatMessageRole;
+  content: string;
+}
