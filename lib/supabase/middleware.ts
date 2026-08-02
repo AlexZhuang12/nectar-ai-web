@@ -4,13 +4,34 @@ import { NextResponse, type NextRequest } from "next/server";
 const PROTECTED_PREFIXES = ["/dashboard", "/workspace", "/profile"];
 const AUTH_PATH = "/auth";
 
+function hasSupabaseEnv(): boolean {
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL?.trim();
+  const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY?.trim();
+  return Boolean(url && key);
+}
+
+function passThrough(request: NextRequest, reason?: string) {
+  if (reason) {
+    console.warn(`[middleware] ${reason}`);
+  }
+  return NextResponse.next({ request });
+}
+
 export async function updateSession(request: NextRequest) {
+  if (!hasSupabaseEnv()) {
+    return passThrough(
+      request,
+      "Supabase env vars missing — skipping auth middleware"
+    );
+  }
+
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!.trim();
+  const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!.trim();
+
   let supabaseResponse = NextResponse.next({ request });
 
-  const supabase = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    {
+  try {
+    const supabase = createServerClient(supabaseUrl, supabaseAnonKey, {
       cookies: {
         getAll() {
           return request.cookies.getAll();
@@ -25,32 +46,41 @@ export async function updateSession(request: NextRequest) {
           );
         },
       },
+    });
+
+    const {
+      data: { user },
+      error: userError,
+    } = await supabase.auth.getUser();
+
+    if (userError) {
+      console.error("[middleware] getUser error:", userError.message);
+      return supabaseResponse;
     }
-  );
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+    const { pathname } = request.nextUrl;
+    const isProtected = PROTECTED_PREFIXES.some(
+      (prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`)
+    );
 
-  const { pathname } = request.nextUrl;
-  const isProtected = PROTECTED_PREFIXES.some(
-    (prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`)
-  );
-  const isAuthPage = pathname === AUTH_PATH || pathname.startsWith(`${AUTH_PATH}/`);
+    if (!user && isProtected) {
+      const url = request.nextUrl.clone();
+      url.pathname = AUTH_PATH;
+      url.searchParams.set("redirect", pathname);
+      return NextResponse.redirect(url);
+    }
 
-  if (!user && isProtected) {
-    const url = request.nextUrl.clone();
-    url.pathname = AUTH_PATH;
-    url.searchParams.set("redirect", pathname);
-    return NextResponse.redirect(url);
+    if (user && pathname === AUTH_PATH) {
+      const url = request.nextUrl.clone();
+      url.pathname = "/dashboard";
+      url.search = "";
+      return NextResponse.redirect(url);
+    }
+
+    return supabaseResponse;
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    console.error("[middleware] updateSession failed:", message);
+    return passThrough(request);
   }
-
-  if (user && pathname === AUTH_PATH) {
-    const url = request.nextUrl.clone();
-    url.pathname = "/dashboard";
-    url.search = "";
-    return NextResponse.redirect(url);
-  }
-
-  return supabaseResponse;
 }
