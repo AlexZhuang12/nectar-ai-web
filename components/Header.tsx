@@ -1,8 +1,8 @@
 "use client";
 
 import UiLanguageSelector from "@/components/UiLanguageSelector";
-import { useTranslation } from "@/context/LocaleContext";
-import { faCrown } from "@fortawesome/free-solid-svg-icons";
+import UserAvatarMenu from "@/components/UserAvatarMenu";
+import { useTranslation } from "@/context/LocaleContext";import { faCrown } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { Coins, MessageSquare, Sparkles } from "lucide-react";
 
@@ -67,8 +67,9 @@ export default function Header({
             <span className="hidden sm:inline">{t("upgradePro")}</span>
             <span className="sm:hidden">{t("upgradeProShort")}</span>
           </button>
-        </div>
-      </div>
+
+          <UserAvatarMenu />
+        </div>      </div>
     </header>
   );
 }

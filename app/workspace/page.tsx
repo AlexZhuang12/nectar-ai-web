@@ -1,6 +1,6 @@
 import ChatPanel from "@/app/workspace/ChatPanel";
-import SignOutButton from "@/app/dashboard/SignOutButton";
 import MemberNav from "@/components/MemberNav";
+import UserAvatarMenu from "@/components/UserAvatarMenu";
 import { buildInitialChatMessages } from "@/lib/chat-messages";
 import { createClient } from "@/lib/supabase/server";
 import type { ChatDisplayMessage } from "@/lib/types";
@@ -47,7 +47,7 @@ export default async function WorkspacePage() {
           </div>
           <div className="flex flex-wrap items-center gap-2">
             <MemberNav current="workspace" />
-            <SignOutButton />
+            <UserAvatarMenu />
           </div>
         </div>
       </header>

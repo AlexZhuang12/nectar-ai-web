@@ -1,6 +1,6 @@
 import ProfileForm from "@/app/profile/ProfileForm";
-import SignOutButton from "@/app/dashboard/SignOutButton";
 import MemberNav from "@/components/MemberNav";
+import UserAvatarMenu from "@/components/UserAvatarMenu";
 import { createClient } from "@/lib/supabase/server";
 import { Sparkles } from "lucide-react";
 import { redirect } from "next/navigation";
@@ -38,7 +38,7 @@ export default async function ProfilePage() {
           </div>
           <div className="flex flex-wrap items-center gap-2">
             <MemberNav current="profile" />
-            <SignOutButton />
+            <UserAvatarMenu />
           </div>
         </div>
       </header>

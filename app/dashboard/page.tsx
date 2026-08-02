@@ -1,6 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
-import SignOutButton from "./SignOutButton";
 import MemberNav from "@/components/MemberNav";
+import UserAvatarMenu from "@/components/UserAvatarMenu";
 import { Sparkles } from "lucide-react";
 import Link from "next/link";
 import { redirect } from "next/navigation";
@@ -29,7 +29,7 @@ export default async function DashboardPage() {
           </div>
           <div className="flex flex-wrap items-center gap-2">
             <MemberNav current="dashboard" />
-            <SignOutButton />
+            <UserAvatarMenu />
           </div>
         </div>
       </header>
