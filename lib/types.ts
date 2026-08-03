@@ -63,6 +63,7 @@ export interface UserProfile {
   id: string;
   full_name: string | null;
   subscription_tier?: string | null;
+  stripe_customer_id?: string | null;
   updated_at: string | null;
 }
 

@@ -32,16 +32,16 @@ export async function POST(request: Request) {
           quantity: 1,
         },
       ],
-      success_url: `${origin}/dashboard?checkout=success`,
+      success_url: `${origin}/dashboard?checkout=success&session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${origin}/?checkout=cancelled`,
       customer_email: user.email ?? undefined,
       client_reference_id: user.id,
       metadata: {
-        user_id: user.id,
+        userId: user.id,
       },
       subscription_data: {
         metadata: {
-          user_id: user.id,
+          userId: user.id,
         },
       },
     });

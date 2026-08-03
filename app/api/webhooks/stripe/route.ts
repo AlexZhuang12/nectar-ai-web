@@ -1,36 +1,9 @@
-import { createSupabaseAdminClient } from "@/lib/supabase/admin";
+import { processCompletedCheckoutSession } from "@/lib/subscription";
 import { getStripe } from "@/lib/stripe";
 import { NextResponse } from "next/server";
 import Stripe from "stripe";
 
 export const runtime = "nodejs";
-
-async function setUserProTier(userId: string) {
-  const supabaseAdmin = createSupabaseAdminClient();
-  if (!supabaseAdmin) {
-    console.error(
-      "[stripe webhook] SUPABASE_SERVICE_ROLE_KEY missing — cannot update profile"
-    );
-    return false;
-  }
-
-  const { error } = await supabaseAdmin.from("profiles").upsert(
-    {
-      id: userId,
-      subscription_tier: "pro",
-      updated_at: new Date().toISOString(),
-    },
-    { onConflict: "id" }
-  );
-
-  if (error) {
-    console.error("[stripe webhook] Failed to update profile:", error.message);
-    return false;
-  }
-
-  console.info("[stripe webhook] User upgraded to pro:", userId);
-  return true;
-}
 
 export async function POST(request: Request) {
   const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET?.trim();
@@ -61,15 +34,15 @@ export async function POST(request: Request) {
 
   if (event.type === "checkout.session.completed") {
     const session = event.data.object as Stripe.Checkout.Session;
-    const userId =
-      session.metadata?.user_id ?? session.client_reference_id;
 
-    if (!userId) {
-      console.error("[stripe webhook] checkout.session.completed missing user_id");
-      return NextResponse.json({ received: true, warning: "no user_id" });
+    try {
+      const userId = await processCompletedCheckoutSession(session);
+      console.info("[stripe webhook] User upgraded to pro:", userId);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Profile update failed";
+      console.error("[stripe webhook] Failed to upgrade profile:", message);
+      return NextResponse.json({ error: message }, { status: 500 });
     }
-
-    await setUserProTier(userId);
   }
 
   return NextResponse.json({ received: true });

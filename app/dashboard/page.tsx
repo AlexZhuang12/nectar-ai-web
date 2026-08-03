@@ -1,15 +1,18 @@
+import CheckoutSuccessSync from "@/components/CheckoutSuccessSync";
 import MemberHeaderBrand from "@/components/MemberHeaderBrand";
 import MemberNav from "@/components/MemberNav";
 import UpgradeToProButton from "@/components/UpgradeToProButton";
 import UserAvatarMenu from "@/components/UserAvatarMenu";
 import { createClient } from "@/lib/supabase/server";
+import { syncCheckoutSessionForUser } from "@/lib/subscription";
 import Link from "next/link";
 import { redirect } from "next/navigation";
+import { Suspense } from "react";
 
 export default async function DashboardPage({
   searchParams,
 }: {
-  searchParams: Promise<{ checkout?: string }>;
+  searchParams: Promise<{ checkout?: string; session_id?: string }>;
 }) {
   const supabase = await createClient();
   const {
@@ -20,11 +23,20 @@ export default async function DashboardPage({
     redirect("/auth?redirect=/dashboard");
   }
 
-  const { checkout } = await searchParams;
+  const { checkout, session_id: sessionId } = await searchParams;
+
+  if (checkout === "success" && sessionId) {
+    try {
+      await syncCheckoutSessionForUser(sessionId, user.id);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
+      console.error("[dashboard] checkout sync failed:", message);
+    }
+  }
 
   const { data: profile } = await supabase
     .from("profiles")
-    .select("subscription_tier, full_name")
+    .select("subscription_tier, full_name, stripe_customer_id")
     .eq("id", user.id)
     .maybeSingle();
 
@@ -81,11 +93,9 @@ export default async function DashboardPage({
             </div>
           </dl>
 
-          {checkout === "success" && (
-            <p className="rounded-lg bg-green-50 px-4 py-3 text-sm text-green-800 dark:bg-green-950/40 dark:text-green-300">
-              Payment received. Your Pro subscription will activate shortly.
-            </p>
-          )}
+          <Suspense fallback={null}>
+            <CheckoutSuccessSync />
+          </Suspense>
 
           <div className="flex flex-wrap gap-3 pt-2">
             <Link href="/workspace" className="btn-primary">
