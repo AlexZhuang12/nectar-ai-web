@@ -4,7 +4,6 @@ import MemberNav from "@/components/MemberNav";
 import UpgradeToProButton from "@/components/UpgradeToProButton";
 import UserAvatarMenu from "@/components/UserAvatarMenu";
 import { createClient } from "@/lib/supabase/server";
-import { syncCheckoutSessionForUser } from "@/lib/subscription";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { Suspense } from "react";
@@ -12,7 +11,7 @@ import { Suspense } from "react";
 export default async function DashboardPage({
   searchParams,
 }: {
-  searchParams: Promise<{ checkout?: string; session_id?: string }>;
+  searchParams: Promise<{ checkout?: string }>;
 }) {
   const supabase = await createClient();
   const {
@@ -23,20 +22,9 @@ export default async function DashboardPage({
     redirect("/auth?redirect=/dashboard");
   }
 
-  const { checkout, session_id: sessionId } = await searchParams;
-
-  if (checkout === "success" && sessionId) {
-    try {
-      await syncCheckoutSessionForUser(sessionId, user.id);
-    } catch (err) {
-      const message = err instanceof Error ? err.message : String(err);
-      console.error("[dashboard] checkout sync failed:", message);
-    }
-  }
-
   const { data: profile } = await supabase
     .from("profiles")
-    .select("subscription_tier, full_name, stripe_customer_id")
+    .select("subscription_tier, full_name")
     .eq("id", user.id)
     .maybeSingle();
 

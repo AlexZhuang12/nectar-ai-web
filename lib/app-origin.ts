@@ -1,28 +1,3 @@
-import Stripe from "stripe";
-
-let stripeClient: Stripe | null = null;
-
-export function getStripe(): Stripe {
-  const secretKey = process.env.STRIPE_SECRET_KEY?.trim();
-  if (!secretKey) {
-    throw new Error("STRIPE_SECRET_KEY is not configured");
-  }
-
-  if (!stripeClient) {
-    stripeClient = new Stripe(secretKey);
-  }
-
-  return stripeClient;
-}
-
-export function getStripePriceIdPro(): string {
-  const priceId = process.env.STRIPE_PRICE_ID_PRO?.trim();
-  if (!priceId) {
-    throw new Error("STRIPE_PRICE_ID_PRO is not configured");
-  }
-  return priceId;
-}
-
 const PRODUCTION_ORIGIN = "https://nectar-ai-web.vercel.app";
 
 export function getRequestOrigin(request: Request): string {

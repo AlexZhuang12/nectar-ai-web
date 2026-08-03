@@ -1,32 +1,6 @@
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
-import { getStripe } from "@/lib/stripe";
-import type Stripe from "stripe";
 
-function getStripeCustomerId(
-  customer: Stripe.Checkout.Session["customer"]
-): string | null {
-  if (!customer) return null;
-  return typeof customer === "string" ? customer : customer.id;
-}
-
-export async function resolveUserIdFromCheckoutSession(
-  session: Pick<
-    Stripe.Checkout.Session,
-    "client_reference_id" | "metadata" | "customer_email"
-  >
-): Promise<string | null> {
-  const metadata = session.metadata ?? {};
-  const userId =
-    session.client_reference_id ||
-    metadata.userId ||
-    metadata.user_id ||
-    null;
-
-  if (userId) return userId;
-
-  const email = session.customer_email;
-  if (!email) return null;
-
+export async function resolveUserIdByEmail(email: string): Promise<string | null> {
   const supabaseAdmin = createSupabaseAdminClient();
   if (!supabaseAdmin) return null;
 
@@ -50,10 +24,7 @@ export async function resolveUserIdFromCheckoutSession(
   return null;
 }
 
-export async function upgradeProfileToPro(params: {
-  userId: string;
-  stripeCustomerId?: string | null;
-}): Promise<void> {
+export async function upgradeProfileToPro(userId: string): Promise<void> {
   const supabaseAdmin = createSupabaseAdminClient();
   if (!supabaseAdmin) {
     throw new Error("SUPABASE_SERVICE_ROLE_KEY is not configured");
@@ -61,14 +32,13 @@ export async function upgradeProfileToPro(params: {
 
   const payload = {
     subscription_tier: "pro",
-    stripe_customer_id: params.stripeCustomerId ?? null,
     updated_at: new Date().toISOString(),
   };
 
   const { data: updated, error: updateError } = await supabaseAdmin
     .from("profiles")
     .update(payload)
-    .eq("id", params.userId)
+    .eq("id", userId)
     .select("id");
 
   if (updateError) {
@@ -77,7 +47,7 @@ export async function upgradeProfileToPro(params: {
 
   if (!updated?.length) {
     const { error: insertError } = await supabaseAdmin.from("profiles").insert({
-      id: params.userId,
+      id: userId,
       ...payload,
     });
 
@@ -87,48 +57,31 @@ export async function upgradeProfileToPro(params: {
   }
 }
 
-export async function processCompletedCheckoutSession(
-  session: Stripe.Checkout.Session
-): Promise<string> {
-  const userId = await resolveUserIdFromCheckoutSession(session);
+export async function resolveUserIdFromLemonSqueezyWebhook(params: {
+  customData?: Record<string, string | number | null | undefined> | null;
+  email?: string | null;
+}): Promise<string> {
+  const rawUserId = params.customData?.user_id;
+  const userId =
+    typeof rawUserId === "string"
+      ? rawUserId
+      : rawUserId != null
+        ? String(rawUserId)
+        : null;
 
-  if (!userId) {
+  if (userId) return userId;
+
+  const email = params.email?.trim();
+  if (!email) {
     throw new Error(
-      "Could not resolve user id from checkout session (client_reference_id, metadata.userId, or customer_email)"
+      "Could not resolve user id from Lemon Squeezy webhook (custom_data.user_id or email)"
     );
   }
 
-  await upgradeProfileToPro({
-    userId,
-    stripeCustomerId: getStripeCustomerId(session.customer),
-  });
-
-  return userId;
-}
-
-export async function syncCheckoutSessionForUser(
-  sessionId: string,
-  expectedUserId: string
-): Promise<void> {
-  const stripe = getStripe();
-  const session = await stripe.checkout.sessions.retrieve(sessionId);
-
-  if (session.payment_status !== "paid") {
-    throw new Error("Checkout session is not paid yet");
+  const resolved = await resolveUserIdByEmail(email);
+  if (!resolved) {
+    throw new Error(`No Supabase user found for email: ${email}`);
   }
 
-  const userId = await resolveUserIdFromCheckoutSession(session);
-
-  if (!userId) {
-    throw new Error("Could not resolve user from checkout session");
-  }
-
-  if (userId !== expectedUserId) {
-    throw new Error("Checkout session does not belong to the current user");
-  }
-
-  await upgradeProfileToPro({
-    userId,
-    stripeCustomerId: getStripeCustomerId(session.customer),
-  });
+  return resolved;
 }

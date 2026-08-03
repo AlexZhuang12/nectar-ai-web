@@ -20,7 +20,7 @@ export default function UpgradeToProButton({
     setError(null);
 
     try {
-      const res = await fetch("/api/checkout", { method: "POST" });
+      const res = await fetch("/api/checkout/lemonsqueezy", { method: "POST" });
       const data = (await res.json()) as { url?: string; error?: string };
 
       if (!res.ok || !data.url) {
