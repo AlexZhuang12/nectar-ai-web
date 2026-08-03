@@ -1,8 +1,12 @@
 import { createClient } from "@/lib/supabase/server";
-import { getAppOrigin, getStripe, getStripePriceIdPro } from "@/lib/stripe";
+import {
+  getRequestOrigin,
+  getStripe,
+  getStripePriceIdPro,
+} from "@/lib/stripe";
 import { NextResponse } from "next/server";
 
-export async function POST() {
+export async function POST(request: Request) {
   const supabase = await createClient();
   const {
     data: { user },
@@ -18,7 +22,7 @@ export async function POST() {
 
   try {
     const stripe = getStripe();
-    const origin = getAppOrigin();
+    const origin = getRequestOrigin(request);
 
     const session = await stripe.checkout.sessions.create({
       mode: "subscription",
