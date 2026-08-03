@@ -72,8 +72,12 @@ CREATE INDEX IF NOT EXISTS idx_user_feedback_created_at
 CREATE TABLE IF NOT EXISTS profiles (
   id UUID PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
   full_name TEXT,
+  subscription_tier TEXT NOT NULL DEFAULT 'free',
   updated_at TIMESTAMPTZ DEFAULT now() NOT NULL
 );
+
+-- Migration for existing deployments
+ALTER TABLE profiles ADD COLUMN IF NOT EXISTS subscription_tier TEXT NOT NULL DEFAULT 'free';
 
 ALTER TABLE profiles ENABLE ROW LEVEL SECURITY;
 

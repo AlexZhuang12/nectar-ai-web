@@ -1,10 +1,16 @@
 import MemberHeaderBrand from "@/components/MemberHeaderBrand";
 import MemberNav from "@/components/MemberNav";
+import UpgradeToProButton from "@/components/UpgradeToProButton";
 import UserAvatarMenu from "@/components/UserAvatarMenu";
 import { createClient } from "@/lib/supabase/server";
 import Link from "next/link";
 import { redirect } from "next/navigation";
-export default async function DashboardPage() {
+
+export default async function DashboardPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ checkout?: string }>;
+}) {
   const supabase = await createClient();
   const {
     data: { user },
@@ -13,6 +19,17 @@ export default async function DashboardPage() {
   if (!user) {
     redirect("/auth?redirect=/dashboard");
   }
+
+  const { checkout } = await searchParams;
+
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("subscription_tier, full_name")
+    .eq("id", user.id)
+    .maybeSingle();
+
+  const tier = profile?.subscription_tier ?? "free";
+  const isPro = tier === "pro";
 
   return (
     <main className="min-h-screen bg-gradient-to-b from-nectar-50/50 to-white dark:from-gray-950 dark:to-gray-900">
@@ -39,6 +56,12 @@ export default async function DashboardPage() {
               <dd className="font-medium text-gray-900 dark:text-white">{user.email}</dd>
             </div>
             <div>
+              <dt className="text-gray-500 dark:text-gray-400">Plan</dt>
+              <dd className="font-medium capitalize text-gray-900 dark:text-white">
+                {tier}
+              </dd>
+            </div>
+            <div>
               <dt className="text-gray-500 dark:text-gray-400">User ID</dt>
               <dd className="break-all font-mono text-xs text-gray-900 dark:text-white">
                 {user.id}
@@ -58,10 +81,17 @@ export default async function DashboardPage() {
             </div>
           </dl>
 
+          {checkout === "success" && (
+            <p className="rounded-lg bg-green-50 px-4 py-3 text-sm text-green-800 dark:bg-green-950/40 dark:text-green-300">
+              Payment received. Your Pro subscription will activate shortly.
+            </p>
+          )}
+
           <div className="flex flex-wrap gap-3 pt-2">
             <Link href="/workspace" className="btn-primary">
               Open AI Workspace
             </Link>
+            {!isPro && <UpgradeToProButton />}
             <Link href="/" className="btn-secondary">
               Public Extractor
             </Link>
