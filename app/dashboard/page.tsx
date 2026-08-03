@@ -1,4 +1,5 @@
 import CheckoutSuccessSync from "@/components/CheckoutSuccessSync";
+import ExtensionAuthSync from "@/components/ExtensionAuthSync";
 import MemberHeaderBrand from "@/components/MemberHeaderBrand";
 import MemberNav from "@/components/MemberNav";
 import UpgradeToProButton from "@/components/UpgradeToProButton";
@@ -33,6 +34,7 @@ export default async function DashboardPage({
 
   return (
     <main className="min-h-screen bg-gradient-to-b from-nectar-50/50 to-white dark:from-gray-950 dark:to-gray-900">
+      <ExtensionAuthSync subscriptionTier={tier} />
       <header className="border-b border-gray-200 bg-white/80 backdrop-blur-md dark:border-gray-800 dark:bg-gray-950/80">
         <div className="mx-auto flex max-w-4xl flex-col gap-3 px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-6">
           <MemberHeaderBrand

@@ -2,6 +2,7 @@
 
 import { createClient } from "@/lib/supabase/client";
 import { sanitizeRedirectPath } from "@/lib/auth-redirect";
+import { syncExtensionAuth } from "@/lib/extension-auth-sync";
 import { Sparkles } from "lucide-react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
@@ -51,6 +52,7 @@ export default function AuthForm() {
         }
 
         if (data.session) {
+          await syncExtensionAuth(supabase);
           await goToWorkspace();
           return;
         }
@@ -66,6 +68,7 @@ export default function AuthForm() {
           return;
         }
 
+        await syncExtensionAuth(supabase);
         await goToWorkspace();
         return;
       }
@@ -81,6 +84,7 @@ export default function AuthForm() {
         return;
       }
 
+      await syncExtensionAuth(supabase);
       router.push(redirectTo);
       router.refresh();
     } catch (err) {
